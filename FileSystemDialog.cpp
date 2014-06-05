@@ -14,12 +14,12 @@ FileSystemDialog::FileSystemDialog(QWidget *parent) :
 
 
     fileSystemModel->setRootPath("C:/");
-    fileSystemModel->setFilter(QDir::Dirs|QDir::Drives|QDir::NoDotAndDotDot|QDir::AllDirs);
+    fileSystemModel->setFilter(QDir::Dirs|QDir::Drives|QDir::NoDotAndDotDot|QDir::AllDirs|QDir::AllEntries);
 
     ui->fileSystemView->setModel(fileSystemModel);
 
     QModelIndex index = fileSystemModel->index("C:/");
-    //ui->fileSystemView->setItemsExpandable(false);
+//    ui->fileSystemView->setItemsExpandable(false);
     ui->fileSystemView->header()->setMovable(false);
 //    ui->treeView->header()->resizeSections(QHeaderView::ResizeToContents);
     ui->fileSystemView->hideColumn(1);
@@ -28,11 +28,13 @@ FileSystemDialog::FileSystemDialog(QWidget *parent) :
     ui->fileSystemView->setColumnWidth(3,250);
     ui->fileSystemView->setRootIndex(index);
 
-  // ui->fileSystemView->setSelectionMode(QAbstractItemView::MultiSelection);
+//    ui->fileSystemView->setSelectionMode(QAbstractItemView::MultiSelection);
 //    QItemSelectionModel * selection = ui->treeView->selectedIndexes();
 //    QModelIndexList  selected = ui->treeView->selectionModel()->selectedIndexes();
 //    qDebug() <<  selected;
-
+    // get the change in selection
+    connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
+            , this, SLOT(updateFilePathLine(const QItemSelection &, const QItemSelection &)));
 }
 
 FileSystemDialog::~FileSystemDialog()
@@ -42,18 +44,19 @@ FileSystemDialog::~FileSystemDialog()
 
 void FileSystemDialog::on_openButton_clicked()
 {
+    QString filePath = ui->filePathline->text();
+    qDebug() << filePath;
+}
+
+void FileSystemDialog::updateFilePathLine(const QItemSelection & , const QItemSelection & )
+{
+    QString path;
     QModelIndexList  selected = ui->fileSystemView->selectionModel()->selectedIndexes();
-    QStringList temp;
     foreach(QModelIndex current, selected)
     {
-        // `temp` contains the text in one row
-        QVariant data = fileSystemModel->data(current, Qt::DisplayRole);
-        QString path = fileSystemModel->filePath(current);
-        qDebug() << "data:" << data;
-        qDebug() << path;
-        temp.append(data.toString());
+        path = fileSystemModel->filePath(current);
     }
-    QStringList selectedPatients = temp.filter("pt");
-    qDebug() << selectedPatients;
-
+    ui->filePathline->setText(path);
 }
+
+

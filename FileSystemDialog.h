@@ -1,6 +1,7 @@
 #ifndef FILESYSTEMDIALOG_H
 #define FILESYSTEMDIALOG_H
 #include <QFileSystemModel>
+#include <QItemSelection>
 
 #include <QWidget>
 
@@ -18,6 +19,8 @@ public:
     
 private slots:
     void on_openButton_clicked();
+    void updateFilePathLine(const QItemSelection &, const QItemSelection &);
+
 
 private:
     Ui::FileSystemDialog *ui;

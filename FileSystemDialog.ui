@@ -10,6 +10,9 @@
     <height>436</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -27,7 +30,7 @@
    <property name="geometry">
     <rect>
      <x>810</x>
-     <y>300</y>
+     <y>310</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -39,14 +42,37 @@
   <widget class="QPushButton" name="openButton">
    <property name="geometry">
     <rect>
-     <x>732</x>
-     <y>300</y>
+     <x>726</x>
+     <y>310</y>
      <width>75</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string>Open</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="filePathline">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>310</y>
+     <width>671</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="filePathLabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>315</y>
+     <width>46</width>
+     <height>13</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>file: </string>
    </property>
   </widget>
  </widget>
