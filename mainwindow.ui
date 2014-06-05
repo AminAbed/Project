@@ -27,16 +27,6 @@
      <string>Patients</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit">
-    <property name="geometry">
-     <rect>
-      <x>250</x>
-      <y>390</y>
-      <width>351</width>
-      <height>51</height>
-     </rect>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
