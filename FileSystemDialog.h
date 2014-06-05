@@ -16,6 +16,9 @@ public:
     explicit FileSystemDialog(QWidget *parent = 0);
     ~FileSystemDialog();
     
+private slots:
+    void on_openButton_clicked();
+
 private:
     Ui::FileSystemDialog *ui;
     QFileSystemModel * fileSystemModel;

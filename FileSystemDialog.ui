@@ -36,7 +36,7 @@
     <string>Cancel</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="openButton_2">
+  <widget class="QPushButton" name="openButton">
    <property name="geometry">
     <rect>
      <x>732</x>
