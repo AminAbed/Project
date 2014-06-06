@@ -40,6 +40,7 @@ private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
 
 
+    void on_cancelButton_clicked();
 };
 
 #endif // MAINWINDOW_H

@@ -59,6 +59,8 @@ void MainWindow::on_actionOpen_triggered()
     // get the change in selection
     connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
             , this, SLOT(updateFilePathLine(const QItemSelection &, const QItemSelection &)));
+
+    ui->filePathline->clear();
 }
 
 
@@ -321,3 +323,8 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 //    _tablesBeingFilled = false;
 //}
 
+
+void MainWindow::on_cancelButton_clicked()
+{
+    ui->pageControl->setCurrentWidget(ui->startPage);
+}
