@@ -14,13 +14,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    FileSystemDialog.cpp
+    CustomLineEdit.cpp
 
 HEADERS  += mainwindow.h \
-    FileSystemDialog.h
+    CustomLineEdit.h
 
-FORMS    += mainwindow.ui \
-    FileSystemDialog.ui
+FORMS    += mainwindow.ui
 
 RESOURCES += \
     images.qrc
