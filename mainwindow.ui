@@ -10,22 +10,90 @@
     <height>568</height>
    </rect>
   </property>
+  <property name="acceptDrops">
+   <bool>false</bool>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QStackedWidget" name="pageControl">
     <property name="geometry">
      <rect>
-      <x>80</x>
-      <y>392</y>
-      <width>151</width>
-      <height>51</height>
+      <x>0</x>
+      <y>0</y>
+      <width>891</width>
+      <height>511</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Patients</string>
+    <property name="currentIndex">
+     <number>1</number>
     </property>
+    <widget class="QWidget" name="startPage"/>
+    <widget class="QWidget" name="fileSystemPage">
+     <widget class="CustomLineEdit" name="filePathline">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>250</y>
+        <width>671</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="acceptDrops">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="filePathLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>250</y>
+        <width>46</width>
+        <height>13</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>file: </string>
+      </property>
+     </widget>
+     <widget class="QTreeView" name="fileSystemView">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>891</width>
+        <height>231</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="openButton">
+      <property name="geometry">
+       <rect>
+        <x>730</x>
+        <y>250</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Open</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="cancelButton">
+      <property name="geometry">
+       <rect>
+        <x>814</x>
+        <y>250</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Cancel</string>
+      </property>
+     </widget>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -55,7 +123,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionOpen"/>
    <addaction name="separator"/>
@@ -78,6 +146,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>CustomLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>CustomLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="images.qrc"/>
  </resources>

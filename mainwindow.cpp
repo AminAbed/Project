@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QMouseEvent>
 #include <QDebug>
+#include <QMimeData>
+#include <CustomLineEdit.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -10,9 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-
-   // connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(on_actionOpen_triggered()));
-
+    ui->pageControl->setCurrentWidget(ui->startPage);
 }
 
 MainWindow::~MainWindow()
@@ -28,8 +29,76 @@ void MainWindow::openSession()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    fileSystemDialog = new FileSystemDialog(this);
-    fileSystemDialog->show();
+    ui->pageControl->setCurrentWidget(ui->fileSystemPage);
+
+    fileSystemModel = new QFileSystemModel(this);
+    fileSystemModel->setHeaderData(1,Qt::Horizontal,Qt::EditRole);
+    ui->fileSystemView->clearSelection();
+
+
+    fileSystemModel->setRootPath("C:/");
+    fileSystemModel->setFilter(QDir::Dirs|QDir::Drives|QDir::NoDotAndDotDot|QDir::AllDirs|QDir::AllEntries);
+
+    ui->fileSystemView->setModel(fileSystemModel);
+
+    QModelIndex index = fileSystemModel->index("C:/");
+//    ui->fileSystemView->setItemsExpandable(false);
+    ui->fileSystemView->header()->setMovable(false);
+//    ui->treeView->header()->resizeSections(QHeaderView::ResizeToContents);
+    ui->fileSystemView->hideColumn(1);
+    ui->fileSystemView->hideColumn(2);
+    ui->fileSystemView->setColumnWidth(0,350);
+    ui->fileSystemView->setColumnWidth(3,250);
+    ui->fileSystemView->setRootIndex(index);
+
+//    ui->fileSystemView->setSelectionMode(QAbstractItemView::MultiSelection);
+//    QItemSelectionModel * selection = ui->treeView->selectedIndexes();
+//    QModelIndexList  selected = ui->treeView->selectionModel()->selectedIndexes();
+//    qDebug() <<  selected;
+
+    // get the change in selection
+    connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
+            , this, SLOT(updateFilePathLine(const QItemSelection &, const QItemSelection &)));
+}
+
+
+
+void MainWindow::on_openButton_clicked()
+{
+    QString filePath = ui->filePathline->text();
+    qDebug() << filePath;
+}
+
+void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelection & )
+{
+    QString path;
+    QModelIndexList  selected = ui->fileSystemView->selectionModel()->selectedIndexes();
+    foreach(QModelIndex current, selected)
+    {
+        path = fileSystemModel->filePath(current);
+    }
+    ui->filePathline->setText(path);
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent * event)
+{
+    QPoint pos;
+   // qDebug() << event->buttons();
+    if(event->buttons() == Qt::LeftButton )
+    {
+        pos = event->pos();
+        //qDebug() << pos;
+    }
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent * event)
+{
+
+}
+
+void MainWindow::mousePressEvent(QMouseEvent * event)
+{
+
 }
 
 
