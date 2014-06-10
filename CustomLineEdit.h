@@ -10,6 +10,7 @@
 class CustomLineEdit : public QLineEdit
 {
     Q_OBJECT
+
 public:
     explicit CustomLineEdit(QWidget *parent = 0);
     
@@ -19,12 +20,17 @@ public:
     void dropEvent(QDropEvent *);
     void setText(const QString &);
     QString getFilePath();
+    bool getDropFlag();
+    void setDropFlag(bool );
+
 signals:
-    
+
+
 public slots:
 
 private:
     QString path;
+    bool dropFlag;
     
 
 };
