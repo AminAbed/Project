@@ -13,13 +13,14 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
     CustomLineEdit.cpp \
-    PatientInfo.cpp
+    PatientInfo.cpp \
+    MainWindow.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += \
     CustomLineEdit.h \
-    PatientInfo.h
+    PatientInfo.h \
+    MainWindow.h
 
 FORMS    += mainwindow.ui
 
