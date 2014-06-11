@@ -23,7 +23,6 @@ public:
 private:
     Ui::MainWindow *ui;
     QFileSystemModel * fileSystemModel;
-    CustomLineEdit * customLineEdit;
 
 protected:
     void mouseMoveEvent(QMouseEvent *);
@@ -34,7 +33,9 @@ protected:
 public slots:
     void on_actionOpen_triggered();
     void on_openButton_clicked();
+    void updatePatientInfoBox();
 //    void readSession();
+    void checkFilePathLine();
 
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);

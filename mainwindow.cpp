@@ -1,9 +1,11 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 #include <QMouseEvent>
 #include <QDebug>
 #include <QMimeData>
 #include <CustomLineEdit.h>
+#include <PatientInfo.h>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -14,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
+    this->checkFilePathLine();
 }
 
 MainWindow::~MainWindow()
@@ -51,14 +54,12 @@ void MainWindow::on_actionOpen_triggered()
     ui->fileSystemView->setColumnWidth(3,250);
     ui->fileSystemView->setRootIndex(index);
 
-//    ui->fileSystemView->setSelectionMode(QAbstractItemView::MultiSelection);
-//    QItemSelectionModel * selection = ui->treeView->selectedIndexes();
-//    QModelIndexList  selected = ui->treeView->selectionModel()->selectedIndexes();
-//    qDebug() <<  selected;
-
     // get the change in selection
     connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
             , this, SLOT(updateFilePathLine(const QItemSelection &, const QItemSelection &)));
+
+    connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
+            , this, SLOT(updatePatientInfoBox()));
 
     ui->filePathline->clear();
 }
@@ -68,7 +69,9 @@ void MainWindow::on_actionOpen_triggered()
 void MainWindow::on_openButton_clicked()
 {
     QString filePath = ui->filePathline->text();
-    qDebug() << filePath;
+    // get patient's information
+    PatientInfo patientInfo;
+    PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
 }
 
 void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelection & )
@@ -82,14 +85,33 @@ void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelectio
     ui->filePathline->setText(path);
 }
 
+void MainWindow::updatePatientInfoBox()
+{
+    QString filePath = ui->filePathline->text();
+    PatientInfo patientInfo;
+    PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
+    ui->patientIDValueLabel->setText(patientInformation["Patient"]);
+    ui->ageValueLabel->setText(patientInformation["Age"]);
+    ui->heightValueLabel->setText(patientInformation["Height"]);
+    ui->weightValueLabel->setText(patientInformation["Weight"]);
+    ui->genderValueLabel->setText(patientInformation["Gender"]);
+}
+
+void MainWindow::checkFilePathLine()
+{
+    if(ui->filePathline->getDropFlag())
+    {
+        this->updatePatientInfoBox();
+    }
+    QTimer::singleShot(1000, this, SLOT(checkFilePathLine()));
+}
+
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
 {
     QPoint pos;
-   // qDebug() << event->buttons();
     if(event->buttons() == Qt::LeftButton )
     {
         pos = event->pos();
-        //qDebug() << pos;
     }
 }
 
@@ -102,8 +124,6 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 {
 
 }
-
-
 
 //void MainWindow::readSession(SessionMetaData::PatientInfo patientInfo, QString logDirName)
 //{
@@ -161,11 +181,6 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 //            continue;
 //        }
 
-//        ui->inhaleEntropies->setRowCount(ui->inhaleEntropies->rowCount() +1);
-//        setText(ui->inhaleEntropies, ui->inhaleEntropies->rowCount()-1, 0, dt.toString("hh:mm"));
-//        setText(ui->inhaleEntropies, ui->inhaleEntropies->rowCount()-1, 1, tr("%1").arg( calc.globalTemperatureTrough, 0, 'f', 1 ));
-//        setText(ui->inhaleEntropies, ui->inhaleEntropies->rowCount()-1, 2, tr("%1").arg( calc.globalHumidityTrough, 0, 'f', 1 ));
-
 //        calc.calcExhaleEntropy(logDir.filePath(fileName));
 
 //        if ( std::isnan(calc.rushHeatLossPerMinute) ) continue;
@@ -190,51 +205,6 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 //        }
 
 
-//        ui->hlPerSample->setRowCount(ui->hlPerSample->rowCount() +1);
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 0, dt.toString("hh:mm"));
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 1, tr("%1").arg( calc.rushHeatLossPerMinute  , 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 2, tr("%1").arg( calc.rushHeatLossPerMinute / calc.rushVolumePerMinute, 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 3, tr("%1").arg( calc.rushHeatLossPerMinute / bmi, 0, 'f', 2 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 4, tr("%1").arg( calc.rushHeatLossPerMinute / bsa, 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 5, tr("%1").arg( calc.globalTemperatureTrough, 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 6, tr("%1").arg( calc.globalTemperaturePeak  , 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 7, tr("%1").arg( calc.globalHumidityTrough   , 0, 'f', 1 ) );
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 8, tr("%1").arg( calc.globalHumidityPeak     , 0, 'f', 1 ) );
-
-
-//        // Vt - Average Tidal Volume
-//        double vt = calc.rushVolumeSum / calc.numBreaths;
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 9, tr("%1").arg(  vt    , 0, 'f', 2 ) );
-//        // J/Vt - Heat Loss/Average Tidal Volume
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 10, tr("%1").arg( calc.rushHeatContentSum / vt , 0, 'f', 1 ) );
-//        // J/Vt/kg - Heat Loss/Average Tidal Volume/kg of patient wt
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 11, tr("%1").arg( calc.rushHeatContentSum / vt / weight_kg , 0, 'f', 2 ) );
-//        // Min V - Minute Volume
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 12, tr("%1").arg( calc.rushVolumePerMinute , 0, 'f', 2 ) );
-//        // Inh E - Inhaled Enthalpy
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 13, tr("%1").arg( calc.inhalationHeatContent / calc.rushVolumeSum , 0, 'f', 4 ) );
-
-//        // Notes
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 14, notesDB.value(fileName, "").toString(), true );
-
-//        setText(ui->hlPerSample, ui->hlPerSample->rowCount()-1, 15, tr("%1").arg( calc.rushO2ContentPerMinute , 0, 'f', 2 ) );
-
-//        //channelsData.at(ChannelHL)->append(calc.rushHeatLossPerMinute * 1 ); // removing 1 causes the grapher to crash
-//        channelsData.at(ChannelHL)->append(calc.rushO2ContentPerMinute ); // removing 1 causes the grapher to crash
-//        channelsData.at(ChannelHLcc)->append(calc.rushHeatLossPerMinute  / calc.rushVolumePerMinute);
-//        channelsData.at(ChannelHLbmi)->append(calc.rushHeatLossPerMinute / bmi);
-//        channelsData.at(ChannelHLbsa)->append(calc.rushHeatLossPerMinute / bsa );
-
-//        //channelsData.at(ChannelO2)->append(calc.rushO2ContentPerMinute * 1);
-//       // channelsData.at(ChannelO2)->append(2);
-
-
-//        channelsData.at(ChannelHLMinTemp)->append(calc.globalTemperaturePeak);
-//        channelsData.at(ChannelHLMaxTemp)->append(calc.globalTemperatureTrough);
-//        channelsData.at(ChannelHLMinHum)->append(calc.globalHumidityPeak);
-//        channelsData.at(ChannelHLMaxHum)->append(calc.globalHumidityTrough);
-
-
 //        // Per Breath Info
 //        for (int breath = 0; breath < calc.temperatureTroughsIndexes.size(); breath ++ )
 //        {
@@ -247,18 +217,6 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 ////                qDebug() << "Temp Time Stamp" << calc.reducedTimeStamps.at(calc.temperatureTroughsIndexes.at(breath));
 //                channelsTimeStamps.at(i)->append(timestamp);
 //            }
-
-//            ui->perBreath->setRowCount(ui->perBreath->rowCount() +1);
-//            setText(ui->perBreath, ui->perBreath->rowCount()-1, 0, tr("%1").arg( ui->hlPerSample->rowCount() ) );
-//            setText(ui->perBreath, ui->perBreath->rowCount()-1, 1, tr("%1").arg( calc.reducedReadings[HeatLossCalc::TEMPERATURE_CH].at(calc.temperatureTroughsIndexes.at(breath)), 0, 'f', 1 ) );
-//            setText(ui->perBreath, ui->perBreath->rowCount()-1, 2, tr("%1").arg( calc.reducedReadings[HeatLossCalc::TEMPERATURE_CH].at(calc.temperaturePeaksIndexes.at(breath))  , 0, 'f', 1 ) );
-//            setText(ui->perBreath, ui->perBreath->rowCount()-1, 3, tr("%1").arg( calc.reducedReadings[HeatLossCalc::HUMIDITY_CH   ].at(calc.humidityTroughsIndexes.at(breath))   , 0, 'f', 1 ) );
-//            setText(ui->perBreath, ui->perBreath->rowCount()-1, 4, tr("%1").arg( calc.reducedReadings[HeatLossCalc::HUMIDITY_CH   ].at(calc.humidityPeaksIndexes.at(breath))     , 0, 'f', 1 ) );
-
-//            channelsData.at(ChannelPBMinTemp)->append( calc.reducedReadings[HeatLossCalc::TEMPERATURE_CH].at(calc.temperatureTroughsIndexes.at(breath)) );
-//            channelsData.at(ChannelPBMaxTemp)->append( calc.reducedReadings[HeatLossCalc::TEMPERATURE_CH].at(calc.temperaturePeaksIndexes.at(breath)) );
-//            channelsData.at(ChannelPBMinHum)->append( calc.reducedReadings[HeatLossCalc::HUMIDITY_CH   ].at(calc.humidityTroughsIndexes.at(breath)) );
-//            channelsData.at(ChannelPBMaxHum)->append( calc.reducedReadings[HeatLossCalc::HUMIDITY_CH   ].at(calc.humidityPeaksIndexes.at(breath)) );
 
 //        }
 //    }
@@ -288,19 +246,6 @@ void MainWindow::mousePressEvent(QMouseEvent * event)
 //    }
 
 
-//    // give temp min and max channels same zoom, ditto for humidity channels
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelHLMinTemp), & ui->hlChartHolder->chart()->channels().at(ChannelHLMinTemp - ChannelHLChartBegin), 2, channelsData.at(ChannelHLMaxTemp));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelHLMinTemp), & ui->hlChartHolder->chart()->channels().at(ChannelHLMaxTemp - ChannelHLChartBegin), 2, channelsData.at(ChannelHLMaxTemp));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelHLMinHum),  & ui->hlChartHolder->chart()->channels().at(ChannelHLMinHum - ChannelHLChartBegin), 2, channelsData.at(ChannelHLMaxHum));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelHLMinHum),  & ui->hlChartHolder->chart()->channels().at(ChannelHLMaxHum - ChannelHLChartBegin), 2, channelsData.at(ChannelHLMaxHum));
-
-
-
-////    // give temp min and max channels same zoom, ditto for humidity channels
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelPBMinTemp), & ui->perBreathChartHolder->chart()->channels().at(ChannelPBMinTemp - ChannelPBChartBegin), 2, channelsData.at(ChannelPBMaxTemp));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelPBMinTemp), & ui->perBreathChartHolder->chart()->channels().at(ChannelPBMaxTemp - ChannelPBChartBegin), 2, channelsData.at(ChannelPBMaxTemp));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelPBMinHum),  & ui->perBreathChartHolder->chart()->channels().at(ChannelPBMinHum - ChannelPBChartBegin), 2, channelsData.at(ChannelPBMaxHum));
-////    ChannelUtils::setChannelMinMax(channelsData.at(ChannelPBMinHum),  & ui->perBreathChartHolder->chart()->channels().at(ChannelPBMaxHum - ChannelPBChartBegin), 2, channelsData.at(ChannelPBMaxHum));
 
 
 
