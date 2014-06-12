@@ -15,12 +15,14 @@ TEMPLATE = app
 SOURCES += main.cpp\
     CustomLineEdit.cpp \
     PatientInfo.cpp \
-    MainWindow.cpp
+    MainWindow.cpp \
+    QCustomPlot.cpp
 
 HEADERS  += \
     CustomLineEdit.h \
     PatientInfo.h \
-    MainWindow.h
+    MainWindow.h \
+    QCustomPlot.h
 
 FORMS    += mainwindow.ui
 
