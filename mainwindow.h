@@ -5,6 +5,7 @@
 #include <QFileSystemModel>
 #include <QItemSelection>
 #include <CustomLineEdit.h>
+#include "QCustomPlot.h"
 
 
 namespace Ui {
@@ -18,7 +19,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void openSession();
+    void plot(QCustomPlot *customPlot);
 
 private:
     Ui::MainWindow *ui;
@@ -39,8 +40,6 @@ public slots:
 
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
-
-
     void on_cancelButton_clicked();
 };
 

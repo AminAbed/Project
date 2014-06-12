@@ -6,6 +6,8 @@
 #include <CustomLineEdit.h>
 #include <PatientInfo.h>
 #include <QTimer>
+#include <QMessageBox>
+#include "QCustomPlot.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -16,19 +18,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
-    this->checkFilePathLine();
+    //this->checkFilePathLine();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
-
-void MainWindow::openSession()
-{
-    
-}
-
 
 void MainWindow::on_actionOpen_triggered()
 {
@@ -61,6 +57,9 @@ void MainWindow::on_actionOpen_triggered()
     connect(ui->fileSystemView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &))
             , this, SLOT(updatePatientInfoBox()));
 
+    connect(this->ui->filePathline, SIGNAL(dropped())
+            , this, SLOT(updatePatientInfoBox()));
+
     ui->filePathline->clear();
 }
 
@@ -69,9 +68,31 @@ void MainWindow::on_actionOpen_triggered()
 void MainWindow::on_openButton_clicked()
 {
     QString filePath = ui->filePathline->text();
-    // get patient's information
-    PatientInfo patientInfo;
-    PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
+    qDebug() << "filePath contains " << filePath.contains("_summaryFile");
+    if (!filePath.isEmpty() && !filePath.contains("_summaryFile"))
+    {
+        QMessageBox::warning(this,"",tr("The supplied file is not supported."));
+    }
+    else if(filePath.isEmpty())
+    {
+        QMessageBox::warning(this,"",tr("Please provide a summary file for analysis."));
+    }
+    else
+    {
+        // get patient's information
+        PatientInfo patientInfo;
+        PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
+        ui->pageControl->setCurrentWidget(ui->plotPage);
+
+        ui->patientInfoLabel->setText(
+                 tr("Patient Info:  ID #%1  |  Age: %2  |  Gender: %3  |  Height: %4  |  Weight: %5 ")
+                .arg(patientInformation["Patient"])
+                .arg(patientInformation["Age"])
+                .arg(patientInformation["Gender"])
+                .arg(patientInformation["Height"])
+                .arg(patientInformation["Weight"]));
+        this->plot(ui->plotView);
+    }
 }
 
 void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelection & )
@@ -97,6 +118,7 @@ void MainWindow::updatePatientInfoBox()
     ui->genderValueLabel->setText(patientInformation["Gender"]);
 }
 
+// not used; lots of overhead
 void MainWindow::checkFilePathLine()
 {
     if(ui->filePathline->getDropFlag())
@@ -105,6 +127,29 @@ void MainWindow::checkFilePathLine()
     }
     QTimer::singleShot(1000, this, SLOT(checkFilePathLine()));
 }
+
+
+void MainWindow::plot(QCustomPlot * customPlot)
+{
+    // generate some data:
+    QVector<double> x(101), y(101); // initialize with entries 0..100
+    for (int i=0; i<101; ++i)
+    {
+      x[i] = i/50.0 - 1; // x goes from -1 to 1
+      y[i] = x[i]*x[i]; // let's plot a quadratic function
+    }
+    // create graph and assign data to it:
+    customPlot->addGraph();
+    customPlot->graph(0)->setData(x, y);
+    // give the axes some labels:
+    customPlot->xAxis->setLabel("x");
+    customPlot->yAxis->setLabel("y");
+    // set axes ranges, so we see all data:
+    customPlot->xAxis->setRange(-1, 1);
+    customPlot->yAxis->setRange(0, 1);
+    customPlot->replot();
+}
+
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
 {
