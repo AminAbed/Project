@@ -39,6 +39,7 @@ void CustomLineEdit::dropEvent(QDropEvent * event)
     setText(path);
     qDebug() << "set drop true";
     setDropFlag(true);
+    emit dropped();
  }
 
 void CustomLineEdit::setText(const QString & path)

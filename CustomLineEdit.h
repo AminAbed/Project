@@ -24,7 +24,7 @@ public:
     void setDropFlag(bool );
 
 signals:
-
+    void dropped();
 
 public slots:
 
