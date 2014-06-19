@@ -8,6 +8,7 @@
 #include "QCustomPlot.h"
 
 
+typedef QList <double> DoublesList;
 namespace Ui {
 class MainWindow;
 }
@@ -19,12 +20,35 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    void setupFileSystemView();
     void plot(QCustomPlot *customPlot);
 
 private:
     Ui::MainWindow *ui;
     QFileSystemModel * fileSystemModel;
+    
+    enum summaryParameters 
+    {     
+        respiratoryEnthalpy,
+        eRespiratoryEnthalpy,
+        tVolume,
+        mVolume,
+        BPM,
+        minTemp,
+        maxTemp,
+        minRH,
+        maxRH,
+        inhaledEnthalpy,
+        O2Consumption,
+        minO2,
+        maxO2,
+        indexNumber,
+        total
+    };
 
+    DoublesList readings[total];
+    QStringList timeStamp;
+    //QStringList readings[total];
 protected:
     void mouseMoveEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
@@ -35,7 +59,7 @@ public slots:
     void on_actionOpen_triggered();
     void on_openButton_clicked();
     void updatePatientInfoBox();
-//    void readSession();
+    int readSession(QString );
     void checkFilePathLine();
 
 private slots:
