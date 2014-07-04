@@ -62,6 +62,7 @@ public slots:
     void updatePatientInfoBox();
     int readSession(QString );
     void checkFilePathLine();
+    void selectionChanged();
 
 
     // slots to limit x/y-axis

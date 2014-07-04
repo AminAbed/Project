@@ -52,6 +52,8 @@ void MainWindow::on_actionOpen_triggered()
     connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(xAxisLimit(QCPRange )));
     connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(yAxisLimit(QCPRange )));
 
+    // connect slot that ties some axis selections together (especially opposite axes):
+    connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
     ui->filePathline->clear();
 }
@@ -174,6 +176,7 @@ int MainWindow::readSession(QString filePath)
     }
     this->plot();
 
+
     QString time ="10-56-56";
     //QDateTime timeDate = QDateTime::toTime_t();
     const QString sformat="hh-mm-ss"; //Generate Date
@@ -222,12 +225,22 @@ void MainWindow::on_cancelButton_clicked()
 
 void MainWindow::plot(/*QCustomPlot * customPlot*/)
 {
+    /* setting up the plot */
+    // legend
+    ui->plotView->legend->setVisible(true);
+    QFont legendFont = font();
+    legendFont.setPointSize(9); // and make a bit smaller for legend
+    ui->plotView->legend->setFont(legendFont);
+    ui->plotView->legend->setBrush(QBrush(QColor(255,255,255,150)));
+    // to change legend placement:
+    ui->plotView->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
 //    ui->plotView->setBackground(Qt::transparent);
 //    ui->plotView->axisRect()->setBackground(Qt::white);
     QVector<double> y(readings[O2Consumption].size());
     QVector<double> w(readings[minRH].size());
     QVector<double> z(readings[respiratoryEnthalpy].size());
     QVector<double> x(readings[O2Consumption].size());
+    QVector<double> a(readings[maxRH].size());
     qDebug() << "readings[O2Consumption].size()" << readings[O2Consumption].size();
     for (int i = 0; i < x.size(); i++)
     {
@@ -237,18 +250,20 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
     y = readings[O2Consumption].toVector();
     z = readings[respiratoryEnthalpy].toVector();
     w = readings[minRH].toVector();
+    a = readings[maxRH].toVector();
     qDebug() << "y.size()" << y.size() << "x.size()" << x.size();
     connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
     connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
     connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
     connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
 
-    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
     ui->plotView->addGraph();
     ui->plotView->graph(0)->setPen(QPen(Qt::red));
     ui->plotView->graph(0)->setData(x,w);
     ui->plotView->addGraph();
     ui->plotView->graph(1)->setPen(QPen(Qt::blue));
+    ui->plotView->graph(1)->setBrush(QBrush(QColor(0, 0, 255, 20)));
     ui->plotView->graph(1)->setData(x,y);
   //  ui->plotView->graph(1)->setValueAxis(ui->plotView->yAxis2);
 
@@ -259,14 +274,18 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
 //    customPlot->xAxis->setRange(-1, 1);
 //    customPlot->yAxis->setRange(0, 1);
 
-    ui->plotView->xAxis->setRange(-1, 1, Qt::AlignCenter);
+//    ui->plotView->xAxis->setRange(-1, 1, Qt::AlignCenter);
     ui->plotView->xAxis->setRange(0, 200);
-  //  ui->plotView->yAxis2->setRange(10,50);
+    ui->plotView->yAxis2->setRange(10,50);
 
- //   ui->plotView->yAxis2->setVisible(true);
-    //QCPAxis::setVisible;
+    ui->plotView->yAxis2->setVisible(true);
+    ui->plotView->addGraph(0,ui->plotView->yAxis2);
+    ui->plotView->graph(2)->setPen(QPen(Qt::green));
+    ui->plotView->graph(2)->setBrush(QBrush(QColor(34,139,34, 35)));
+    ui->plotView->graph(2)->setData(x,a);
     ui->pageControl->setCurrentWidget(ui->plotPage);
-    ui->plotView->axisRect();
+ //   ui->plotView->axisRect();
+
 
 }
 
@@ -309,7 +328,8 @@ void MainWindow::xAxisLimit(QCPRange newRange)
     if (boundedRange.size() > upperRangeBound-lowerRangeBound)
     {
         boundedRange = QCPRange(lowerRangeBound, upperRangeBound);
-    } else
+    }
+    else
     {
         double oldSize = boundedRange.size();
         if (boundedRange.lower < lowerRangeBound)
@@ -335,7 +355,8 @@ void MainWindow::yAxisLimit(QCPRange newRange)
     if (boundedRange.size() > upperRangeBound-lowerRangeBound)
     {
         boundedRange = QCPRange(lowerRangeBound, upperRangeBound);
-    } else
+    }
+    else
     {
         double oldSize = boundedRange.size();
         if (boundedRange.lower < lowerRangeBound)
@@ -381,6 +402,52 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
     return false;
 }
 
+void MainWindow::selectionChanged()
+{
+  /*
+   normally, axis base line, axis tick labels and axis labels are selectable separately, but we want
+   the user only to be able to select the axis as a whole, so we tie the selected states of the tick labels
+   and the axis base line together. However, the axis label shall be selectable individually.
+
+   The selection state of the left and right axes shall be synchronized as well as the state of the
+   bottom and top axes.
+
+   Further, we want to synchronize the selection of the graphs with the selection state of the respective
+   legend item belonging to that graph. So the user can select a graph by either clicking on the graph itself
+   or on its legend item.
+  */
+
+
+
+  // make top and bottom axes be selected synchronously, and handle axis and tick labels as one selectable object:
+  if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels)// ||
+     // ui->plotView->xAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->xAxis2->selectedParts().testFlag(QCPAxis::spTickLabels)
+          )
+  {
+      qDebug() << "selected";
+    ui->plotView->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+    ui->plotView->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+  }
+//  // make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
+//  if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
+//      ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
+//  {
+//    ui->customPlot->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+//    ui->customPlot->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+//  }
+
+//  // synchronize selection of graphs with selection of corresponding legend items:
+//  for (int i=0; i<ui->customPlot->graphCount(); ++i)
+//  {
+//    QCPGraph *graph = ui->customPlot->graph(i);
+//    QCPPlottableLegendItem *item = ui->customPlot->legend->itemWithPlottable(graph);
+//    if (item->selected() || graph->selected())
+//    {
+//      item->setSelected(true);
+//      graph->setSelected(true);
+//    }
+//  }
+}
 
 
 
