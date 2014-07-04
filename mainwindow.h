@@ -48,7 +48,7 @@ private:
 
     DoublesList readings[total];
     QStringList timeStamp;
-    //QStringList readings[total];
+
 protected:
     void mouseMoveEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
@@ -63,9 +63,10 @@ public slots:
     void checkFilePathLine();
 
 
-
+    // slots to limit x/y-axis
     void limitXAxis(QCPRange newRange);
     void limitYAxis(QCPRange newRange);
+
     void horzScrollBarChanged(int value);
     void vertScrollBarChanged(int value);
     void xAxisChanged(QCPRange range);

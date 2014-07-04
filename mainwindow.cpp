@@ -46,8 +46,8 @@ void MainWindow::on_actionOpen_triggered()
     connect(this->ui->filePathline, SIGNAL(dropped()) , this, SLOT(updatePatientInfoBox()));
 
     // to prevent from dragging out of bounds
-    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(limitXAxis(QCPRange )));
-    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(limitYAxis(QCPRange )));
+    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(xAxisLimit(QCPRange )));
+    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(yAxisLimit(QCPRange )));
 
 
     ui->filePathline->clear();
@@ -297,7 +297,7 @@ void MainWindow::yAxisChanged(QCPRange range)
 }
 
 
-void MainWindow::limitXAxis(QCPRange newRange)
+void MainWindow::xAxisLimit(QCPRange newRange)
 {
     qDebug() << "x-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
@@ -325,7 +325,7 @@ void MainWindow::limitXAxis(QCPRange newRange)
 }
 
 
-void MainWindow::limitYAxis(QCPRange newRange)
+void MainWindow::yAxisLimit(QCPRange newRange)
 {
     qDebug() << "y-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
