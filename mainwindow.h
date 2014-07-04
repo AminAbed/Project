@@ -50,6 +50,7 @@ private:
     QStringList timeStamp;
 
 protected:
+    bool eventFilter(QObject *, QEvent *);
     void mouseMoveEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mousePressEvent(QMouseEvent *);
@@ -64,8 +65,8 @@ public slots:
 
 
     // slots to limit x/y-axis
-    void limitXAxis(QCPRange newRange);
-    void limitYAxis(QCPRange newRange);
+    void xAxisLimit(QCPRange newRange);
+    void yAxisLimit(QCPRange newRange);
 
     void horzScrollBarChanged(int value);
     void vertScrollBarChanged(int value);

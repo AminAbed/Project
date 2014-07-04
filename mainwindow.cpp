@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
     //this->checkFilePathLine();
+
+    //install eventFilter
+    ui->plotView->installEventFilter(this);
 }
 
 MainWindow::~MainWindow()
@@ -219,6 +222,8 @@ void MainWindow::on_cancelButton_clicked()
 
 void MainWindow::plot(/*QCustomPlot * customPlot*/)
 {
+//    ui->plotView->setBackground(Qt::transparent);
+    ui->plotView->axisRect()->setBackground(Qt::white);
     QVector<double> y(readings[O2Consumption].size());
     QVector<double> w(readings[minRH].size());
     QVector<double> z(readings[respiratoryEnthalpy].size());
@@ -261,6 +266,7 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
  //   ui->plotView->yAxis2->setVisible(true);
     //QCPAxis::setVisible;
     ui->pageControl->setCurrentWidget(ui->plotPage);
+    ui->plotView->axisRect();
 
 }
 
@@ -299,7 +305,7 @@ void MainWindow::yAxisChanged(QCPRange range)
 
 void MainWindow::xAxisLimit(QCPRange newRange)
 {
-    qDebug() << "x-axis range changing" << newRange.size();
+    //qDebug() << "x-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
     double lowerRangeBound = 0;
     double upperRangeBound = 180;
@@ -327,7 +333,7 @@ void MainWindow::xAxisLimit(QCPRange newRange)
 
 void MainWindow::yAxisLimit(QCPRange newRange)
 {
-    qDebug() << "y-axis range changing" << newRange.size();
+    //qDebug() << "y-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
     double lowerRangeBound = 0;
     double upperRangeBound = 50;
@@ -353,7 +359,20 @@ void MainWindow::yAxisLimit(QCPRange newRange)
 }
 
 
+bool MainWindow::eventFilter(QObject *target, QEvent *event)
+{
+    if(target == ui->plotView && event->type() == QEvent::MouseMove)
+    {
+        QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
+        int x = ui->plotView->xAxis->pixelToCoord(mouseEvent->pos().x());
+        int y = ui->plotView->yAxis->pixelToCoord(mouseEvent->pos().y());
+        qDebug() << "x" << x << "y" << y;
 
+           // setToolTip(QString("%1 , %2").arg(x).arg(y));
+
+      }
+    return false;
+}
 
 
 
@@ -365,6 +384,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent * event)
     {
         pos = event->pos();
     }
+    qDebug() << pos;
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent * event)
