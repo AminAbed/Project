@@ -276,6 +276,32 @@
         <height>321</height>
        </rect>
       </property>
+      <widget class="QScrollBar" name="verticalScrollBar">
+       <property name="geometry">
+        <rect>
+         <x>870</x>
+         <y>0</y>
+         <width>16</width>
+         <height>301</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+      <widget class="QScrollBar" name="horizontalScrollBar">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>300</y>
+         <width>871</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
      </widget>
      <widget class="QTableWidget" name="tableWidget">
       <property name="geometry">
@@ -325,7 +351,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
    <property name="icon">
-    <iconset>
+    <iconset resource="images.qrc">
      <normaloff>:/images/open.jpg</normaloff>:/images/open.jpg</iconset>
    </property>
    <property name="text">
@@ -342,17 +368,19 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header>../../qcustomplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>CustomLineEdit</class>
    <extends>QLineEdit</extends>
    <header>CustomLineEdit.h</header>
   </customwidget>
-  <customwidget>
-   <class>QCustomPlot</class>
-   <extends>QWidget</extends>
-   <header>QCustomPlot.h</header>
-   <container>1</container>
-  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
  <connections/>
 </ui>

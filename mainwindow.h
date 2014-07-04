@@ -21,7 +21,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void setupFileSystemView();
-    void plot(QCustomPlot *customPlot);
+    void plot();
 
 private:
     Ui::MainWindow *ui;
@@ -61,6 +61,15 @@ public slots:
     void updatePatientInfoBox();
     int readSession(QString );
     void checkFilePathLine();
+
+
+
+    void limitXAxis(QCPRange newRange);
+    void limitYAxis(QCPRange newRange);
+    void horzScrollBarChanged(int value);
+    void vertScrollBarChanged(int value);
+    void xAxisChanged(QCPRange range);
+    void yAxisChanged(QCPRange range);
 
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
