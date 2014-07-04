@@ -223,7 +223,7 @@ void MainWindow::on_cancelButton_clicked()
 void MainWindow::plot(/*QCustomPlot * customPlot*/)
 {
 //    ui->plotView->setBackground(Qt::transparent);
-    ui->plotView->axisRect()->setBackground(Qt::white);
+//    ui->plotView->axisRect()->setBackground(Qt::white);
     QVector<double> y(readings[O2Consumption].size());
     QVector<double> w(readings[minRH].size());
     QVector<double> z(readings[respiratoryEnthalpy].size());
@@ -270,7 +270,6 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
 
 }
 
-
 void MainWindow::horzScrollBarChanged(int value)
 {
   if (qAbs(ui->plotView->xAxis->range().center()-value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
@@ -289,7 +288,6 @@ void MainWindow::vertScrollBarChanged(int value)
   }
 }
 
-
 void MainWindow::xAxisChanged(QCPRange range)
 {
   ui->horizontalScrollBar->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
@@ -301,7 +299,6 @@ void MainWindow::yAxisChanged(QCPRange range)
   ui->verticalScrollBar->setValue(qRound(-range.center()*100.0)); // adjust position of scroll bar slider
   ui->verticalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
-
 
 void MainWindow::xAxisLimit(QCPRange newRange)
 {
@@ -327,9 +324,7 @@ void MainWindow::xAxisLimit(QCPRange newRange)
         }
     }
     ui->plotView->xAxis->setRange(boundedRange);
-
 }
-
 
 void MainWindow::yAxisLimit(QCPRange newRange)
 {
@@ -355,9 +350,7 @@ void MainWindow::yAxisLimit(QCPRange newRange)
         }
     }
     ui->plotView->yAxis->setRange(boundedRange);
-
 }
-
 
 bool MainWindow::eventFilter(QObject *target, QEvent *event)
 {
@@ -368,9 +361,23 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
         int y = ui->plotView->yAxis->pixelToCoord(mouseEvent->pos().y());
         qDebug() << "x" << x << "y" << y;
 
-           // setToolTip(QString("%1 , %2").arg(x).arg(y));
-
-      }
+        if (y <= 0 && x >= 0)
+        {
+            qDebug() << "zooming in x";
+            ui->plotView->axisRect()->setRangeZoom(ui->plotView->xAxis->orientation());
+        }
+        else if (x <= 0 && y >= 0)
+        {
+            qDebug() << "zooming in y";
+            ui->plotView->axisRect()->setRangeZoom(/*ui->plotView->yAxis->orientation()*/Qt::Vertical);
+        }
+        else
+        {
+            qDebug() << "zooming in both x and y";
+            ui->plotView->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
+        }
+          //setToolTip(QString("%1 , %2").arg(x).arg(y));
+    }
     return false;
 }
 
