@@ -13,6 +13,10 @@
 #include <QDateTime>
 #include "QCustomPlot.h"
 
+#define COLUMN_COUNT 14
+
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -24,8 +28,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->pageControl->setCurrentWidget(ui->startPage);
     //this->checkFilePathLine();
 
-    //install eventFilter
+    // install eventFilter
     ui->plotView->installEventFilter(this);
+    // graph and table splitter resize
+//    ui->splitter->setStretchFactor(0, 1);
+//    ui->splitter->setStretchFactor(1, 0);
+    QList<int> sizes;
+    sizes << 250 << 100;
+    ui->splitter->setSizes(sizes);
+
+
 }
 
 MainWindow::~MainWindow()
@@ -175,6 +187,7 @@ int MainWindow::readSession(QString filePath)
         }
     }
     this->plot();
+    this->populateTable();
 
 
     QString time ="10-56-56";
@@ -184,38 +197,6 @@ int MainWindow::readSession(QString filePath)
     qDebug() << "time is" << dateTime;
 //    double timeSeconds = dateTime.toTime_t();
 //    qDebug() << "time is" << timeSeconds;
-
-
-
-
-//    foreach (QString fileName, entries)
-//    {
-//        qDebug() << fileName;
-//        // filenames are "datetime_mode_pt"
-//        QStringList metadata = fileName.split('_');
-
-//        // datetime is the long date format
-//        QDateTime dt = QDateTime::fromString ( metadata.at (0), "yyyy-MM-dd-HH-mm-ss" );
-
-//        ui->sessionLoadingProgressBar->setValue(ui->sessionLoadingProgressBar->value() + 1);
-//        ui->currentSampleLabel->setText(tr("Analyzing %1").arg(fileName));
-//        QApplication::processEvents();
-
-//        try
-//        {
-//            if (! calc.calcInhaleEntropy(logDir.filePath(fileName)) )
-//            {
-//                qDebug() << fileName << ": Unable to calculate Inhale Entropy, ignorring";
-//                continue;
-//            }
-//        }
-//        catch (exception& e)
-//        {
-//            qDebug() << e.what();
-//            continue;
-//        }
-
-//
 }
 
 void MainWindow::on_cancelButton_clicked()
@@ -252,10 +233,10 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
     w = readings[minRH].toVector();
     a = readings[maxRH].toVector();
     qDebug() << "y.size()" << y.size() << "x.size()" << x.size();
-    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
-    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
-    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
-    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
+//    connect(ui->horizontalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(horzScrollBarChanged(int)));
+//    connect(ui->verticalScrollBar, SIGNAL(valueChanged(int)), this, SLOT(vertScrollBarChanged(int)));
+//    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
+//    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
 
     ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
     ui->plotView->addGraph();
@@ -289,39 +270,63 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
 
 }
 
+void MainWindow::populateTable()
+{
+    int rowCount = timeStamp.size();
+    ui->tableWidget->setRowCount(rowCount);
+    ui->tableWidget->setColumnCount(COLUMN_COUNT);
+
+    QString  text;
+    double reading;
+    for(int row=0; row < ui->tableWidget->rowCount(); row++)
+    {
+        // populate time stamps
+        text = timeStamp[row];
+        ui->tableWidget->setItem(row,0,new QTableWidgetItem(text));
+        // populate the readings
+        for (int col=1; col< ui->tableWidget->columnCount(); col++)
+        {
+            reading = readings[col-1].at(row);
+            ui->tableWidget->setItem(row,col,new QTableWidgetItem(QString::number(reading)));
+        }
+    }
+    // resize column and row to content
+    ui->tableWidget->resizeRowsToContents();
+    ui->tableWidget->resizeColumnsToContents();
+}
+
 void MainWindow::horzScrollBarChanged(int value)
 {
-  if (qAbs(ui->plotView->xAxis->range().center()-value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
-  {
-    ui->plotView->xAxis->setRange(value/100.0, ui->plotView->xAxis->range().size(), Qt::AlignCenter);
-    ui->plotView->replot();
-  }
+//  if (qAbs(ui->plotView->xAxis->range().center()-value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+//  {
+//    ui->plotView->xAxis->setRange(value/100.0, ui->plotView->xAxis->range().size(), Qt::AlignCenter);
+//    ui->plotView->replot();
+//  }
 }
 
 void MainWindow::vertScrollBarChanged(int value)
 {
-  if (qAbs(ui->plotView->yAxis->range().center()+value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
-  {
-    ui->plotView->yAxis->setRange(-value/100.0, ui->plotView->yAxis->range().size(), Qt::AlignCenter);
-    ui->plotView->replot();
-  }
+//  if (qAbs(ui->plotView->yAxis->range().center()+value/100.0) > 0.01) // if user is dragging plot, we don't want to replot twice
+//  {
+//    ui->plotView->yAxis->setRange(-value/100.0, ui->plotView->yAxis->range().size(), Qt::AlignCenter);
+//    ui->plotView->replot();
+//  }
 }
 
 void MainWindow::xAxisChanged(QCPRange range)
 {
-  ui->horizontalScrollBar->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
-  ui->horizontalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+//  ui->horizontalScrollBar->setValue(qRound(range.center()*100.0)); // adjust position of scroll bar slider
+//  ui->horizontalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
 void MainWindow::yAxisChanged(QCPRange range)
 {
-  ui->verticalScrollBar->setValue(qRound(-range.center()*100.0)); // adjust position of scroll bar slider
-  ui->verticalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
+//  ui->verticalScrollBar->setValue(qRound(-range.center()*100.0)); // adjust position of scroll bar slider
+//  ui->verticalScrollBar->setPageStep(qRound(range.size()*100.0)); // adjust size of scroll bar slider
 }
 
 void MainWindow::xAxisLimit(QCPRange newRange)
 {
-    //qDebug() << "x-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
     double lowerRangeBound = 0;
     double upperRangeBound = 180;
@@ -348,7 +353,6 @@ void MainWindow::xAxisLimit(QCPRange newRange)
 
 void MainWindow::yAxisLimit(QCPRange newRange)
 {
-    //qDebug() << "y-axis range changing" << newRange.size();
     QCPRange boundedRange = newRange;
     double lowerRangeBound = 0;
     double upperRangeBound = 50;

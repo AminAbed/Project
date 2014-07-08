@@ -22,6 +22,7 @@ public:
     ~MainWindow();
     void setupFileSystemView();
     void plot();
+    void populateTable();
 
 private:
     Ui::MainWindow *ui;
