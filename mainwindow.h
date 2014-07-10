@@ -75,6 +75,9 @@ public slots:
     void xAxisChanged(QCPRange range);
     void yAxisChanged(QCPRange range);
 
+    void mousePress();
+    void mouseWheel();
+
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
     void on_cancelButton_clicked();

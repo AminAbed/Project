@@ -11,6 +11,7 @@
 #include <QStringList>
 #include <QVector>
 #include <QDateTime>
+#include <QToolTip>
 #include "QCustomPlot.h"
 
 #define COLUMN_COUNT 14
@@ -21,7 +22,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    //
     ui->setupUi(this);
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -30,14 +30,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // install eventFilter
     ui->plotView->installEventFilter(this);
+
     // graph and table splitter resize
 //    ui->splitter->setStretchFactor(0, 1);
 //    ui->splitter->setStretchFactor(1, 0);
     QList<int> sizes;
     sizes << 250 << 100;
     ui->splitter->setSizes(sizes);
-
-
 }
 
 MainWindow::~MainWindow()
@@ -66,6 +65,12 @@ void MainWindow::on_actionOpen_triggered()
 
     // connect slot that ties some axis selections together (especially opposite axes):
     connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
+
+//    connect(ui->plotView, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
+//    connect(ui->plotView, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
+
+    connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
+
 
     ui->filePathline->clear();
 }
@@ -197,6 +202,9 @@ int MainWindow::readSession(QString filePath)
     qDebug() << "time is" << dateTime;
 //    double timeSeconds = dateTime.toTime_t();
 //    qDebug() << "time is" << timeSeconds;
+
+
+    return 0;
 }
 
 void MainWindow::on_cancelButton_clicked()
@@ -238,7 +246,7 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
 //    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
 //    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
 
-    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend);
     ui->plotView->addGraph();
     ui->plotView->graph(0)->setPen(QPen(Qt::red));
     ui->plotView->graph(0)->setData(x,w);
@@ -377,82 +385,126 @@ void MainWindow::yAxisLimit(QCPRange newRange)
     ui->plotView->yAxis->setRange(boundedRange);
 }
 
+void MainWindow::mousePress()
+{
+  // if an axis is selected, only allow the direction of that axis to be dragged
+
+  if (ui->plotView->xAxis->selectedParts().testFlag(QCPAxis::spAxis))
+  {
+      ui->plotView->axisRect()->setRangeDrag(ui->plotView->xAxis->orientation());
+  }
+  else if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis))
+  {
+      ui->plotView->axisRect()->setRangeDrag(ui->plotView->yAxis->orientation());
+  }
+  else
+  {
+      ui->plotView->axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
+  }
+}
+
+void MainWindow::mouseWheel()
+{
+  // if an axis is selected, only allow the direction of that axis to be zoomed
+
+  if (ui->plotView->xAxis->selectedParts().testFlag(QCPAxis::spAxis))
+  {
+      ui->plotView->axisRect()->setRangeZoom(ui->plotView->xAxis->orientation());
+  }
+  else if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis))
+  {
+      ui->plotView->axisRect()->setRangeZoom(ui->plotView->yAxis->orientation());
+  }
+}
+
 bool MainWindow::eventFilter(QObject *target, QEvent *event)
 {
     if(target == ui->plotView && event->type() == QEvent::MouseMove)
     {
         QMouseEvent * mouseEvent = static_cast<QMouseEvent*>(event);
-        int x = ui->plotView->xAxis->pixelToCoord(mouseEvent->pos().x());
-        int y = ui->plotView->yAxis->pixelToCoord(mouseEvent->pos().y());
-        qDebug() << "x" << x << "y" << y;
+        double x = ui->plotView->xAxis->pixelToCoord(mouseEvent->pos().x());
+        double y = ui->plotView->yAxis->pixelToCoord(mouseEvent->pos().y());
 
+        // zooming functinality
         if (y <= 0 && x >= 0)
         {
-            qDebug() << "zooming in x";
+            // zooming in x direction
             ui->plotView->axisRect()->setRangeZoom(ui->plotView->xAxis->orientation());
         }
         else if (x <= 0 && y >= 0)
         {
-            qDebug() << "zooming in y";
+            // zooming in y direction
             ui->plotView->axisRect()->setRangeZoom(/*ui->plotView->yAxis->orientation()*/Qt::Vertical);
         }
         else
         {
-            qDebug() << "zooming in both x and y";
+            // zooming in x and y directions;
             ui->plotView->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
         }
           //setToolTip(QString("%1 , %2").arg(x).arg(y));
+
+        //QCPAbstractPlottable *plottable = ui->plotView->plottableAt(mouseEvent->posF());
+        //if(plottable)
+        //{
+        //      double x = ui->plotView->pixelToCoord(mouseEvent->posF().x());
+        //}
+
+        // getting the selected graph coordinates and showing it in a tooltip
+        QToolTip::hideText();
+        if( !ui->plotView->selectedGraphs().isEmpty())
+        {
+            double distance = ui->plotView->selectedGraphs().first()->selectTest(mouseEvent->posF(),true);
+            if( distance < 10 && distance > 0)
+            {
+                double x = ui->plotView->selectedGraphs().first()->keyAxis()->pixelToCoord(mouseEvent->posF().x());
+                double y = ui->plotView->selectedGraphs().first()->valueAxis()->pixelToCoord(mouseEvent->posF().y());
+
+                // showing the tooltip
+                QToolTip::showText(mouseEvent->globalPos(),
+                                   tr("<table>"
+                                      "<tr>"
+                                      "<td>x:</td>" "<td>%L2</td>"
+                                      "</tr>"
+                                      "<tr>"
+                                      "<td>y:</td>" "<td>%L3</td>"
+                                      "</tr>"
+                                      "</table>").
+                                   arg(x).
+                                   arg(y),
+                                   ui->plotView, ui->plotView->rect());
+            }
+        }
     }
     return false;
 }
 
 void MainWindow::selectionChanged()
 {
-  /*
-   normally, axis base line, axis tick labels and axis labels are selectable separately, but we want
-   the user only to be able to select the axis as a whole, so we tie the selected states of the tick labels
-   and the axis base line together. However, the axis label shall be selectable individually.
+  // make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
+//  if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
+//      ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
+//  {
+//    ui->plotView->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+//    ui->plotView->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+//  }
 
-   The selection state of the left and right axes shall be synchronized as well as the state of the
-   bottom and top axes.
-
-   Further, we want to synchronize the selection of the graphs with the selection state of the respective
-   legend item belonging to that graph. So the user can select a graph by either clicking on the graph itself
-   or on its legend item.
-  */
-
-
-
-  // make top and bottom axes be selected synchronously, and handle axis and tick labels as one selectable object:
-  if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels)// ||
-     // ui->plotView->xAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->xAxis2->selectedParts().testFlag(QCPAxis::spTickLabels)
-          )
+  // synchronize selection of graphs with selection of corresponding legend items:
+  for (int i=0; i<ui->plotView->graphCount(); ++i)
   {
-      qDebug() << "selected";
-    ui->plotView->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
-    ui->plotView->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+    QCPGraph *graph = ui->plotView->graph(i);
+    QCPPlottableLegendItem *item = ui->plotView->legend->itemWithPlottable(graph);
+    if (item->selected() || graph->selected())
+    {
+      item->setSelected(true);
+      graph->setSelected(true);
+    }
+    if(!item->selected() || !graph->selected())
+    {
+        item->setSelected(false);
+        graph->setSelected(false);
+    }
   }
-//  // make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
-//  if (ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
-//      ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->customPlot->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
-//  {
-//    ui->customPlot->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
-//    ui->customPlot->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
-//  }
-
-//  // synchronize selection of graphs with selection of corresponding legend items:
-//  for (int i=0; i<ui->customPlot->graphCount(); ++i)
-//  {
-//    QCPGraph *graph = ui->customPlot->graph(i);
-//    QCPPlottableLegendItem *item = ui->customPlot->legend->itemWithPlottable(graph);
-//    if (item->selected() || graph->selected())
-//    {
-//      item->setSelected(true);
-//      graph->setSelected(true);
-//    }
-//  }
 }
-
 
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
