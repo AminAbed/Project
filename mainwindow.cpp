@@ -216,6 +216,7 @@ void MainWindow::setupGraph()
     ui->plotView->legend->setBrush(QBrush(QColor(255,255,255,150)));
     // to change legend placement:
     ui->plotView->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
+    ui->plotView->legend->setSelectableParts(QCPLegend::spItems);
     // graph interactions
     ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend);
 
@@ -516,13 +517,18 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 
 void MainWindow::selectionChanged()
 {
-  // make left and right axes be selected synchronously, and handle axis and tick labels as one selectable object:
-//  if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) ||
-//      ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels))
-//  {
-//    ui->plotView->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
-//    ui->plotView->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
-//  }
+  // handle axis and tick labels as one selectable object:
+  if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) /*||
+      ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels)*/)
+  {
+   // ui->plotView->yAxis2->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+    ui->plotView->yAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+  }
+
+  if (ui->plotView->xAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->xAxis->selectedParts().testFlag(QCPAxis::spTickLabels) )
+  {
+    ui->plotView->xAxis->setSelectedParts(QCPAxis::spAxis|QCPAxis::spTickLabels);
+  }
 
   // synchronize selection of graphs with selection of corresponding legend items:
   for (int i=0; i<ui->plotView->graphCount(); ++i)
@@ -533,11 +539,6 @@ void MainWindow::selectionChanged()
     {
       item->setSelected(true);
       graph->setSelected(true);
-    }
-    if(!item->selected() || !graph->selected())
-    {
-        item->setSelected(false);
-        graph->setSelected(false);
     }
   }
 }
