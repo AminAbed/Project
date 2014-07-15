@@ -66,11 +66,10 @@ void MainWindow::on_actionOpen_triggered()
     // connect slot that ties some axis selections together (especially opposite axes):
     connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
-//    connect(ui->plotView, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
-//    connect(ui->plotView, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
+    connect(ui->plotView, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
+    connect(ui->plotView, SIGNAL(mouseWheel(QWheelEvent*)), this, SLOT(mouseWheel()));
 
     connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
-
 
     ui->filePathline->clear();
 }
@@ -104,6 +103,7 @@ void MainWindow::on_openButton_clicked()
                 .arg(patientInformation["Height"])
                 .arg(patientInformation["Weight"]));
         this->readSession(filePath);
+       // this->setupGraph();
     }
 }
 
@@ -185,24 +185,18 @@ int MainWindow::readSession(QString filePath)
         if (fields.size() < total) continue;
         // extracting time stamps
         timeStamp << fields[0];
+
         for (int columnNum = 0; columnNum < total; columnNum++)
         {
             QString reading = fields.at(columnNum+1);
             readings[columnNum].append(reading.toDouble());
         }
     }
-    this->plot();
+
+   // this->plot();
+    this->setupGraph();
+    this->plot(MainWindow::O2Consumption, Qt::blue);
     this->populateTable();
-
-
-    QString time ="10-56-56";
-    //QDateTime timeDate = QDateTime::toTime_t();
-    const QString sformat="hh-mm-ss"; //Generate Date
-    QTime dateTime = QTime::fromString( time, sformat );
-    qDebug() << "time is" << dateTime;
-//    double timeSeconds = dateTime.toTime_t();
-//    qDebug() << "time is" << timeSeconds;
-
 
     return 0;
 }
@@ -212,9 +206,8 @@ void MainWindow::on_cancelButton_clicked()
     ui->pageControl->setCurrentWidget(ui->startPage);
 }
 
-void MainWindow::plot(/*QCustomPlot * customPlot*/)
+void MainWindow::setupGraph()
 {
-    /* setting up the plot */
     // legend
     ui->plotView->legend->setVisible(true);
     QFont legendFont = font();
@@ -223,6 +216,41 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
     ui->plotView->legend->setBrush(QBrush(QColor(255,255,255,150)));
     // to change legend placement:
     ui->plotView->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
+    // graph interactions
+    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend);
+
+    // set a fixed tick-step to one tick per month:
+//      ui->plotView->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+//      ui->plotView->xAxis->setDateTimeFormat("yyyy/MM/dd-HH:mm:ss");
+//      ui->plotView->xAxis->setAutoTickStep(true);
+//      ui->plotView->axisRect()->setupFullAxesBox();
+//      ui->plotView->xAxis->setTickStep(3600);
+//      ui->plotView->xAxis->rescale(true);
+//      ui->plotView->xAxis->
+//     // ui->plotView->xAxis->setTickStep(2628000); // one month in seconds
+//      ui->plotView->xAxis->setSubTickCount(5);
+    // x-axis setup
+
+
+    for (int i = 0; i < timeStamp.size(); i++)
+    {
+        QString sFormat = "yyyy-MM-dd-HH-mm-ss";
+        QDateTime tmpTime = QDateTime::fromString(timeStamp[i], sFormat);
+        double dTime = (double) tmpTime.toTime_t();
+        x.append(dTime);
+    }
+    ui->plotView->xAxis->setRange(x.first(), x.last());
+
+    ui->plotView->xAxis->setTickLabelType(QCPAxis::ltDateTime);
+    ui->plotView->xAxis->setDateTimeFormat("yyyy/MM/dd\nHH:mm:ss");
+    //ui->plotView->axisRect()->setupFullAxesBox();
+   // ui->plotView->rescaleAxes(true);
+
+}
+
+void MainWindow::plot(/*QCustomPlot * customPlot*/)
+{
+    /* setting up the plot */
 //    ui->plotView->setBackground(Qt::transparent);
 //    ui->plotView->axisRect()->setBackground(Qt::white);
     QVector<double> y(readings[O2Consumption].size());
@@ -246,7 +274,6 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
 //    connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(xAxisChanged(QCPRange)));
 //    connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange)), this, SLOT(yAxisChanged(QCPRange)));
 
-    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend);
     ui->plotView->addGraph();
     ui->plotView->graph(0)->setPen(QPen(Qt::red));
     ui->plotView->graph(0)->setData(x,w);
@@ -256,15 +283,7 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
     ui->plotView->graph(1)->setData(x,y);
   //  ui->plotView->graph(1)->setValueAxis(ui->plotView->yAxis2);
 
-    // give the axes some labels:
-    ui->plotView->xAxis->setLabel("x");
-    ui->plotView->yAxis->setLabel("y");
-    // set axes ranges, so we see all data:
-//    customPlot->xAxis->setRange(-1, 1);
-//    customPlot->yAxis->setRange(0, 1);
 
-//    ui->plotView->xAxis->setRange(-1, 1, Qt::AlignCenter);
-    ui->plotView->xAxis->setRange(0, 200);
     ui->plotView->yAxis2->setRange(10,50);
 
     ui->plotView->yAxis2->setVisible(true);
@@ -275,6 +294,19 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
     ui->pageControl->setCurrentWidget(ui->plotPage);
  //   ui->plotView->axisRect();
 
+
+}
+
+void MainWindow::plot(int parameter, Qt::GlobalColor color)
+{
+    QVector<double> value(readings[parameter].size());
+    value = readings[parameter].toVector();
+    ui->plotView->addGraph();
+    QPen pen;
+    pen.setColor(QColor(0, 0, 255, 200));
+
+    ui->plotView->graph()->setData(x, value);
+    ui->pageControl->setCurrentWidget(ui->plotPage);
 
 }
 
@@ -336,8 +368,8 @@ void MainWindow::yAxisChanged(QCPRange range)
 void MainWindow::xAxisLimit(QCPRange newRange)
 {
     QCPRange boundedRange = newRange;
-    double lowerRangeBound = 0;
-    double upperRangeBound = 180;
+    double lowerRangeBound = x.first();
+    double upperRangeBound = x.last();
     if (boundedRange.size() > upperRangeBound-lowerRangeBound)
     {
         boundedRange = QCPRange(lowerRangeBound, upperRangeBound);
@@ -417,6 +449,7 @@ void MainWindow::mouseWheel()
   }
 }
 
+
 bool MainWindow::eventFilter(QObject *target, QEvent *event)
 {
     if(target == ui->plotView && event->type() == QEvent::MouseMove)
@@ -426,12 +459,12 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
         double y = ui->plotView->yAxis->pixelToCoord(mouseEvent->pos().y());
 
         // zooming functinality
-        if (y <= 0 && x >= 0)
+        if (y <= 0 && x >= MainWindow::x.first())
         {
             // zooming in x direction
             ui->plotView->axisRect()->setRangeZoom(ui->plotView->xAxis->orientation());
         }
-        else if (x <= 0 && y >= 0)
+        else if (x <= MainWindow::x.first() && y >= 0)
         {
             // zooming in y direction
             ui->plotView->axisRect()->setRangeZoom(/*ui->plotView->yAxis->orientation()*/Qt::Vertical);
@@ -441,7 +474,7 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
             // zooming in x and y directions;
             ui->plotView->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
         }
-          //setToolTip(QString("%1 , %2").arg(x).arg(y));
+
 
         //QCPAbstractPlottable *plottable = ui->plotView->plottableAt(mouseEvent->posF());
         //if(plottable)
@@ -457,7 +490,10 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
             if( distance < 10 && distance > 0)
             {
                 double x = ui->plotView->selectedGraphs().first()->keyAxis()->pixelToCoord(mouseEvent->posF().x());
+                QDateTime xDateTime;
+                xDateTime.setTime_t(x);
                 double y = ui->plotView->selectedGraphs().first()->valueAxis()->pixelToCoord(mouseEvent->posF().y());
+
 
                 // showing the tooltip
                 QToolTip::showText(mouseEvent->globalPos(),
@@ -469,7 +505,7 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
                                       "<td>y:</td>" "<td>%L3</td>"
                                       "</tr>"
                                       "</table>").
-                                   arg(x).
+                                   arg(xDateTime.toString()).
                                    arg(y),
                                    ui->plotView, ui->plotView->rect());
             }

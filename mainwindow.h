@@ -22,7 +22,9 @@ public:
     ~MainWindow();
     void setupFileSystemView();
     void plot();
+    void plot(int , Qt::GlobalColor );
     void populateTable();
+    void setupGraph();
 
 private:
     Ui::MainWindow *ui;
@@ -49,6 +51,7 @@ private:
 
     DoublesList readings[total];
     QStringList timeStamp;
+    QVector<double> x;
 
 protected:
     bool eventFilter(QObject *, QEvent *);
