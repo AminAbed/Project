@@ -23,6 +23,7 @@ public:
     void setupFileSystemView();
     void plot();
     void plot(int , Qt::GlobalColor );
+    void removeSelectedGraph();
     void populateTable();
     void setupGraph();
 

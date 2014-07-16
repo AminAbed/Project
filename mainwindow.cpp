@@ -63,7 +63,7 @@ void MainWindow::on_actionOpen_triggered()
     connect(ui->plotView->xAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(xAxisLimit(QCPRange )));
     connect(ui->plotView->yAxis, SIGNAL(rangeChanged(QCPRange )), this, SLOT(yAxisLimit(QCPRange )));
 
-    // connect slot that ties some axis selections together (especially opposite axes):
+    // connect axis, tick labels and legend selections
     connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
     connect(ui->plotView, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress()));
@@ -311,6 +311,15 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color)
 
 }
 
+void MainWindow::removeSelectedGraph()
+{
+  if (ui->customPlot->selectedGraphs().size() > 0)
+  {
+    ui->plotView->removeGraph(ui->customPlot->selectedGraphs().first());
+    ui->plotView->replot();
+  }
+}
+
 void MainWindow::populateTable()
 {
     int rowCount = timeStamp.size();
@@ -500,7 +509,7 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
                 QToolTip::showText(mouseEvent->globalPos(),
                                    tr("<table>"
                                       "<tr>"
-                                      "<td>x:</td>" "<td>%L2</td>"
+                                      "<td>Date/Time:</td>" "<td>%L2</td>"
                                       "</tr>"
                                       "<tr>"
                                       "<td>y:</td>" "<td>%L3</td>"
