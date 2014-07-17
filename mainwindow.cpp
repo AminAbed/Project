@@ -230,12 +230,12 @@ void MainWindow::setupGraph()
 //      ui->plotView->xAxis->setDateTimeFormat("yyyy/MM/dd-HH:mm:ss");
 //      ui->plotView->xAxis->setAutoTickStep(true);
 //      ui->plotView->axisRect()->setupFullAxesBox();
-//      ui->plotView->xAxis->setTickStep(3600);
+      ui->plotView->xAxis->setTickStep(60);
 //      ui->plotView->xAxis->rescale(true);
 //      ui->plotView->xAxis->
-//     // ui->plotView->xAxis->setTickStep(2628000); // one month in seconds
+//      ui->plotView->xAxis->setTickStep(2628000); // one month in seconds
 //      ui->plotView->xAxis->setSubTickCount(5);
-    // x-axis setup
+
 
 
     for (int i = 0; i < timeStamp.size(); i++)
@@ -310,12 +310,12 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     value = readings[parameter].toVector();
     ui->plotView->addGraph();
 
+    ui->plotView->graph()->setName(name);
     ui->plotView->graph()->setPen(QPen(color));
  //   ui->plotView->graph()->setBrush(QBrush(QColor(color, 35)));
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
     ui->plotView->graph()->setData(x, value);
-  //  ui->plotView->legend->spItems->setName(name);
     ui->plotView->replot();
 
 
@@ -330,60 +330,115 @@ void MainWindow::removeSelectedGraph()
   }
 }
 
+void MainWindow::removeAllGraphs()
+{
+    ui->plotView->clearGraphs();
+    ui->plotView->replot();
+}
+
 void MainWindow::menuRequest(QPoint pos)
 {
     QMenu * menu = new QMenu(this);
     QMenu * addSubMenu = menu->addMenu("&Add");
-    //QMenu * removeMenu = menu->addMenu("&Remove");
     menu->setAttribute(Qt::WA_DeleteOnClose);
-    actionRE = addSubMenu->addAction( "RE");
-    //connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
 
-    actionERE = addSubMenu->addAction( "ERE" );
-    actionO2 = addSubMenu->addAction( "O2" );
-    actionMinTemp = addSubMenu->addAction( "Min Temp" );
-    actionMaxTemp = addSubMenu->addAction( "Max Temp" );
-    actionMinRH = addSubMenu->addAction( "Min RH" );
-    actionMaxRH = addSubMenu->addAction( "Max RH" );
+    actionREAdd = addSubMenu->addAction( "RE");
+    actionEREAdd = addSubMenu->addAction( "ERE" );
+    actionO2Add = addSubMenu->addAction( "O2" );
+    actionMinTempAdd = addSubMenu->addAction( "Min Temp" );
+    actionMaxTempAdd = addSubMenu->addAction( "Max Temp" );
+    actionMinRHAdd = addSubMenu->addAction( "Min RH" );
+    actionMaxRHAdd = addSubMenu->addAction( "Max RH" );
 
-    connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
+    if (ui->plotView->graphCount() > 0 )
+    {
+        QMenu * removeMenu = menu->addMenu("&Remove");
+        menu->addAction( "Remove All &Graphs", this, SLOT(removeAllGraphs()));
+
+        actionRERemove = removeMenu->addAction( "RE");
+//        actionRERemove->setCheckable(true);
+
+
+        actionERERemove = removeMenu->addAction( "ERE" );
+        actionO2Remove = removeMenu->addAction( "O2" );
+        actionMinTempRemove = removeMenu->addAction( "Min Temp" );
+        actionMaxTempRemove = removeMenu->addAction( "Max Temp" );
+        actionMinRHRemove = removeMenu->addAction( "Min RH" );
+        actionMaxRHRemove = removeMenu->addAction( "Max RH" );
+    }
 
     if (ui->plotView->selectedGraphs().size() > 0)
     {
-        menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+        menu->addAction("Remove &Selected Graph", this, SLOT(removeSelectedGraph()));
     }
+
+    connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
     menu->popup(ui->plotView->mapToGlobal(pos));
 }
 
 void MainWindow::actionMapper(QAction * action)
 {
-    if (action == actionRE )
+    // add a graph
+    if (action == actionREAdd )
     {
+//        actionEREAdd->setChecked(true);
+//        actionEREAdd->setEnabled(false);
         plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
     }
-    else if (action == actionERE)
+    else if (action == actionEREAdd)
     {
         plot(MainWindow::eRespiratoryEnthalpy, Qt::darkRed, "ERE");
     }
-    else if (action == actionO2)
+    else if (action == actionO2Add)
     {
         plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
     }
-    else if (action == actionMaxTemp)
+    else if (action == actionMaxTempAdd)
     {
         plot(MainWindow::maxTemp, Qt::blue, "Max Temp");
     }
-    else if (action == actionMinTemp)
+    else if (action == actionMinTempAdd)
     {
         plot(MainWindow::minTemp, Qt::darkBlue, "Min Temp");
     }
-    else if (action == actionMaxRH)
+    else if (action == actionMaxRHAdd)
     {
         plot(MainWindow::maxRH, Qt::green, "Max RH");
     }
-    else if (action == actionMinRH)
+    else if (action == actionMinRHAdd)
     {
         plot(MainWindow::minRH, Qt::darkGreen, "Min RH");
+    }
+    // remove a graph
+    if (action == actionRERemove )
+    {
+        ui->plotView->removeGraph(MainWindow::respiratoryEnthalpy);
+        actionEREAdd->setChecked(false);
+        actionEREAdd->setEnabled(true);
+    }
+    else if (action == actionERERemove)
+    {
+        ui->plotView->removeGraph(MainWindow::eRespiratoryEnthalpy);
+    }
+    else if (action == actionO2Remove)
+    {
+        ui->plotView->removeGraph(MainWindow::O2Consumption);
+    }
+    else if (action == actionMaxTempRemove)
+    {
+        ui->plotView->removeGraph(MainWindow::maxTemp);
+    }
+    else if (action == actionMinTempRemove)
+    {
+        ui->plotView->removeGraph(MainWindow::minTemp);
+    }
+    else if (action == actionMaxRHRemove)
+    {
+        ui->plotView->removeGraph(MainWindow::maxRH);
+    }
+    else if (action == actionMinRHRemove)
+    {
+        ui->plotView->removeGraph(MainWindow::minRH);
     }
 }
 

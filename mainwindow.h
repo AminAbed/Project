@@ -54,13 +54,22 @@ private:
     QVector<double> x;
 
     // context menu actions
-    QAction* actionRE;
-    QAction* actionERE;
-    QAction* actionO2;
-    QAction* actionMinTemp;
-    QAction* actionMaxTemp;
-    QAction* actionMinRH;
-    QAction* actionMaxRH;
+    QAction* actionREAdd;
+    QAction* actionEREAdd;
+    QAction* actionO2Add;
+    QAction* actionMinTempAdd;
+    QAction* actionMaxTempAdd;
+    QAction* actionMinRHAdd;
+    QAction* actionMaxRHAdd;
+
+    QAction* actionRERemove;
+    QAction* actionERERemove;
+    QAction* actionO2Remove;
+    QAction* actionMinTempRemove;
+    QAction* actionMaxTempRemove;
+    QAction* actionMinRHRemove;
+    QAction* actionMaxRHRemove;
+
 
 
 protected:
@@ -81,6 +90,7 @@ public slots:
     void plot(int , Qt::GlobalColor , QString );
     void plot();
     void removeSelectedGraph();
+    void removeAllGraphs();
     void actionMapper(QAction * );
 
 
