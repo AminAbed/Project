@@ -21,7 +21,6 @@ PatientInfo::PatientInformation * PatientInfo::extractPatientInfo(QString fileNa
     while(!file.atEnd())
     {
         QString line = file.readLine();
-        qDebug() << line;
         if (line[0] == 'P')
         {
             QStringList fields = line.split(",");
@@ -31,7 +30,7 @@ PatientInfo::PatientInformation * PatientInfo::extractPatientInfo(QString fileNa
                 QString key = keyVal[0];
                 QString val = keyVal[1];
                 (*patientInformation)[key] = val;
-                qDebug() << "patientInformation[" << key << "] = " << val;
+                //qDebug() << "patientInformation[" << key << "] = " << val;
             }
             break;
         }

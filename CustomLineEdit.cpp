@@ -14,7 +14,6 @@ CustomLineEdit::CustomLineEdit(QWidget *parent) :
 void CustomLineEdit::dragEnterEvent(QDragEnterEvent * event)
 {
     setDropFlag(false);
-    qDebug() << "drop false";
     event->accept();
 }
 
@@ -37,7 +36,6 @@ void CustomLineEdit::dropEvent(QDropEvent * event)
     path.remove(0,8);    // string formatting
     qDebug() << path;
     setText(path);
-    qDebug() << "set drop true";
     setDropFlag(true);
     emit dropped();
  }
