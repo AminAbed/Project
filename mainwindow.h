@@ -21,9 +21,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void setupFileSystemView();
-    void plot();
-    void plot(int , Qt::GlobalColor );
-    void removeSelectedGraph();
     void populateTable();
     void setupGraph();
 
@@ -52,7 +49,19 @@ private:
 
     DoublesList readings[total];
     QStringList timeStamp;
+
+    // universal x-axis (timestamps)
     QVector<double> x;
+
+    // context menu actions
+    QAction* actionRE;
+    QAction* actionERE;
+    QAction* actionO2;
+    QAction* actionMinTemp;
+    QAction* actionMaxTemp;
+    QAction* actionMinRH;
+    QAction* actionMaxRH;
+
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -68,6 +77,11 @@ public slots:
     int readSession(QString );
     void checkFilePathLine();
     void selectionChanged();
+    void menuRequest(QPoint );
+    void plot(int , Qt::GlobalColor , QString );
+    void plot();
+    void removeSelectedGraph();
+    void actionMapper(QAction * );
 
 
     // slots to limit x/y-axis

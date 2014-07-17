@@ -71,6 +71,9 @@ void MainWindow::on_actionOpen_triggered()
 
     connect(ui->plotView, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
+    ui->plotView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->plotView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(menuRequest(QPoint)));
+
     ui->filePathline->clear();
 }
 
@@ -79,7 +82,6 @@ void MainWindow::on_actionOpen_triggered()
 void MainWindow::on_openButton_clicked()
 {
     QString filePath = ui->filePathline->text();
-    qDebug() << "filePath contains " << filePath.contains("_summaryFile");
     if (!filePath.isEmpty() && !filePath.contains("_summaryFile"))
     {
         QMessageBox::warning(this,"",tr("The supplied file is not supported."));
@@ -181,6 +183,8 @@ int MainWindow::readSession(QString filePath)
         QString line = fileLines.at(i);
         // ignoring the patient info and data header
         if (!line.startsWith("2")) continue;
+        // ignoring nans and -255's
+        if (line.contains("-255")||line.contains("nan")) continue;
         QStringList fields = line.split(",");
         if (fields.size() < total) continue;
         // extracting time stamps
@@ -195,8 +199,9 @@ int MainWindow::readSession(QString filePath)
 
    // this->plot();
     this->setupGraph();
-    this->plot(MainWindow::O2Consumption, Qt::blue);
+    //this->plot(MainWindow::O2Consumption, Qt::blue);
     this->populateTable();
+    ui->pageControl->setCurrentWidget(ui->plotPage);
 
     return 0;
 }
@@ -296,29 +301,92 @@ void MainWindow::plot(/*QCustomPlot * customPlot*/)
  //   ui->plotView->axisRect();
 
 
+    ui->plotView->replot();
 }
 
-void MainWindow::plot(int parameter, Qt::GlobalColor color)
+void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
 {
     QVector<double> value(readings[parameter].size());
     value = readings[parameter].toVector();
     ui->plotView->addGraph();
-    QPen pen;
-    pen.setColor(QColor(0, 0, 255, 200));
 
+    ui->plotView->graph()->setPen(QPen(color));
+ //   ui->plotView->graph()->setBrush(QBrush(QColor(color, 35)));
+    ui->plotView->yAxis->setRange(value.first(),value.last());
+    ui->plotView->yAxis->rescale(true);
     ui->plotView->graph()->setData(x, value);
-    ui->pageControl->setCurrentWidget(ui->plotPage);
+  //  ui->plotView->legend->spItems->setName(name);
+    ui->plotView->replot();
+
 
 }
 
 void MainWindow::removeSelectedGraph()
 {
-  if (ui->customPlot->selectedGraphs().size() > 0)
+  if (ui->plotView->selectedGraphs().size() > 0)
   {
-    ui->plotView->removeGraph(ui->customPlot->selectedGraphs().first());
+    ui->plotView->removeGraph(ui->plotView->selectedGraphs().first());
     ui->plotView->replot();
   }
 }
+
+void MainWindow::menuRequest(QPoint pos)
+{
+    QMenu * menu = new QMenu(this);
+    QMenu * addSubMenu = menu->addMenu("&Add");
+    //QMenu * removeMenu = menu->addMenu("&Remove");
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    actionRE = addSubMenu->addAction( "RE");
+    //connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
+
+    actionERE = addSubMenu->addAction( "ERE" );
+    actionO2 = addSubMenu->addAction( "O2" );
+    actionMinTemp = addSubMenu->addAction( "Min Temp" );
+    actionMaxTemp = addSubMenu->addAction( "Max Temp" );
+    actionMinRH = addSubMenu->addAction( "Min RH" );
+    actionMaxRH = addSubMenu->addAction( "Max RH" );
+
+    connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
+
+    if (ui->plotView->selectedGraphs().size() > 0)
+    {
+        menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+    }
+    menu->popup(ui->plotView->mapToGlobal(pos));
+}
+
+void MainWindow::actionMapper(QAction * action)
+{
+    if (action == actionRE )
+    {
+        plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
+    }
+    else if (action == actionERE)
+    {
+        plot(MainWindow::eRespiratoryEnthalpy, Qt::darkRed, "ERE");
+    }
+    else if (action == actionO2)
+    {
+        plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
+    }
+    else if (action == actionMaxTemp)
+    {
+        plot(MainWindow::maxTemp, Qt::blue, "Max Temp");
+    }
+    else if (action == actionMinTemp)
+    {
+        plot(MainWindow::minTemp, Qt::darkBlue, "Min Temp");
+    }
+    else if (action == actionMaxRH)
+    {
+        plot(MainWindow::maxRH, Qt::green, "Max RH");
+    }
+    else if (action == actionMinRH)
+    {
+        plot(MainWindow::minRH, Qt::darkGreen, "Min RH");
+    }
+}
+
 
 void MainWindow::populateTable()
 {
