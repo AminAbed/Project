@@ -20,7 +20,14 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    RE(false),
+    ERE(false),
+    O2(false),
+    MinTemp(false),
+    MaxTemp(false),
+    MinRH(false),
+    MaxRH(false)
 {
     ui->setupUi(this);
     ui->mainToolBar->setMinimumHeight(32);
@@ -343,9 +350,6 @@ void MainWindow::menuRequest(QPoint pos)
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
     actionREAdd = addSubMenu->addAction( "RE");
-
-
-   // qDebug() << "checkable?" << actionREAdd->isCheckable() << "enabled?" << actionREAdd->isEnabled();
     actionEREAdd = addSubMenu->addAction( "ERE" );
     actionO2Add = addSubMenu->addAction( "O2" );
     actionMinTempAdd = addSubMenu->addAction( "Min Temp" );
@@ -353,22 +357,40 @@ void MainWindow::menuRequest(QPoint pos)
     actionMinRHAdd = addSubMenu->addAction( "Min RH" );
     actionMaxRHAdd = addSubMenu->addAction( "Max RH" );
 
+    actionREAdd->setCheckable(true);
+    actionEREAdd->setCheckable(true);
+    actionO2Add->setCheckable(true);
+    actionMinTempAdd->setCheckable(true);
+    actionMaxTempAdd->setCheckable(true);
+    actionMinRHAdd->setCheckable(true);
+    actionMaxRHAdd->setCheckable(true);
+
+
+
+
     if (ui->plotView->graphCount() > 0 )
     {
         QMenu * removeMenu = menu->addMenu("&Remove");
         menu->addAction( "Remove All &Graphs", this, SLOT(removeAllGraphs()));
 
         actionRERemove = removeMenu->addAction( "RE");
-//        actionRERemove->setCheckable(true);
-
-
         actionERERemove = removeMenu->addAction( "ERE" );
         actionO2Remove = removeMenu->addAction( "O2" );
         actionMinTempRemove = removeMenu->addAction( "Min Temp" );
         actionMaxTempRemove = removeMenu->addAction( "Max Temp" );
         actionMinRHRemove = removeMenu->addAction( "Min RH" );
         actionMaxRHRemove = removeMenu->addAction( "Max RH" );
+
+        actionRERemove->setCheckable(true);
+        actionERERemove->setCheckable(true);
+        actionO2Remove->setCheckable(true);
+        actionMinTempRemove->setCheckable(true);
+        actionMaxTempRemove->setCheckable(true);
+        actionMinRHRemove->setCheckable(true);
+        actionMaxRHRemove->setCheckable(true);
+        this->toggleMenu();
     }
+
 
     if (ui->plotView->selectedGraphs().size() > 0)
     {
@@ -376,6 +398,7 @@ void MainWindow::menuRequest(QPoint pos)
     }
 
     connect(menu, SIGNAL(triggered(QAction *)), this, SLOT(actionMapper(QAction *)));
+
     menu->popup(ui->plotView->mapToGlobal(pos));
 }
 
@@ -403,71 +426,173 @@ void MainWindow::actionMapper(QAction * action)
     ui->statusBar->showMessage("Loading the graph...");
     if (action == actionREAdd )
     {
-//        actionRERemove->setEnabled(true);
-//        actionREAdd->setEnabled(false);
         plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
+        RE = true;
     }
     else if (action == actionEREAdd)
     {
         plot(MainWindow::eRespiratoryEnthalpy, Qt::darkRed, "ERE");
+        ERE = true;
     }
     else if (action == actionO2Add)
     {
         plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
+        O2 = true;
     }
     else if (action == actionMaxTempAdd)
     {
         plot(MainWindow::maxTemp, Qt::blue, "Max Temp");
+        MaxTemp = true;
     }
     else if (action == actionMinTempAdd)
     {
         plot(MainWindow::minTemp, Qt::darkBlue, "Min Temp");
+        MinTemp = true;
     }
     else if (action == actionMaxRHAdd)
     {
         plot(MainWindow::maxRH, Qt::green, "Max RH");
+        MaxRH = true;
     }
     else if (action == actionMinRHAdd)
     {
         plot(MainWindow::minRH, Qt::darkGreen, "Min RH");
+        MinRH = true;
     }
-
 
     // remove a graph
     if (action == actionRERemove )
     {
         this->removeGraphByAction(action);
-//        actionRERemove->setEnabled(false);
-//        actionREAdd->setEnabled(true);
+        RE = false;
     }
     else if (action == actionERERemove)
     {
         this->removeGraphByAction(action);
+        ERE = false;
     }
     else if (action == actionO2Remove)
     {
         this->removeGraphByAction(action);
+        O2 = false;
     }
     else if (action == actionMaxTempRemove)
     {
         this->removeGraphByAction(action);
+        MaxTemp = false;
     }
     else if (action == actionMinTempRemove)
     {
         this->removeGraphByAction(action);
+        MinTemp = false;
     }
     else if (action == actionMaxRHRemove)
     {
         this->removeGraphByAction(action);
+        MaxRH = false;
     }
     else if (action == actionMinRHRemove)
     {
         this->removeGraphByAction(action);
+        MinRH = false;
     }
     ui->plotView->replot();
     ui->statusBar->showMessage(" ");
 }
 
+void MainWindow::toggleMenu()
+{
+    if (RE)
+    {
+        actionREAdd->setChecked(true);
+        actionREAdd->setEnabled(false);
+        actionRERemove->setEnabled(true);
+    }
+    else
+    {
+        actionREAdd->setChecked(false);
+        actionREAdd->setEnabled(true);
+        actionRERemove->setEnabled(false);
+    }
+
+    if (ERE)
+    {
+        actionEREAdd->setChecked(true);
+        actionEREAdd->setEnabled(false);
+        actionERERemove->setEnabled(true);
+    }
+    else
+    {
+        actionEREAdd->setChecked(false);
+        actionEREAdd->setEnabled(true);
+        actionERERemove->setEnabled(false);
+    }
+
+    if (O2)
+    {
+        actionO2Add->setChecked(true);
+        actionO2Add->setEnabled(false);
+        actionO2Remove->setEnabled(true);
+    }
+    else
+    {
+        actionO2Add->setChecked(false);
+        actionO2Add->setEnabled(true);
+        actionO2Remove->setEnabled(false);
+    }
+
+    if (MinTemp)
+    {
+        actionMinTempAdd->setChecked(true);
+        actionMinTempAdd->setEnabled(false);
+        actionMinTempRemove->setEnabled(true);
+    }
+    else
+    {
+        actionMinTempAdd->setChecked(false);
+        actionMinTempAdd->setEnabled(true);
+        actionMinTempRemove->setEnabled(false);
+    }
+
+    if (MaxTemp)
+    {
+        actionMaxTempAdd->setChecked(true);
+        actionMaxTempAdd->setEnabled(false);
+        actionMaxTempRemove->setEnabled(true);
+    }
+    else
+    {
+        actionMaxTempAdd->setChecked(false);
+        actionMaxTempAdd->setEnabled(true);
+        actionMaxTempRemove->setEnabled(false);
+    }
+
+    if (MinRH)
+    {
+        actionMinRHAdd->setChecked(true);
+        actionMinRHAdd->setEnabled(false);
+        actionMinRHRemove->setEnabled(true);
+    }
+    else
+    {
+        actionMinRHAdd->setChecked(false);
+        actionMinRHAdd->setEnabled(true);
+        actionMinRHRemove->setEnabled(false);
+    }
+
+    if (MaxRH)
+    {
+        actionMaxRHAdd->setChecked(true);
+        actionMaxRHAdd->setEnabled(false);
+        actionMaxRHRemove->setEnabled(true);
+    }
+    else
+    {
+        actionMaxRHAdd->setChecked(false);
+        actionMaxRHAdd->setEnabled(true);
+        actionMaxRHRemove->setEnabled(false);
+    }
+}
 
 void MainWindow::populateTable()
 {

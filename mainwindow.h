@@ -24,6 +24,7 @@ public:
     void populateTable();
     void setupGraph();
     bool removeGraphByAction(QAction * );
+    void toggleMenu();
 
 private:
     Ui::MainWindow *ui;
@@ -70,6 +71,7 @@ private:
     QAction* actionMaxTempRemove;
     QAction* actionMinRHRemove;
     QAction* actionMaxRHRemove;
+    bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
 
 
 
@@ -93,7 +95,6 @@ public slots:
     void removeSelectedGraph();
     void removeAllGraphs();
     void actionMapper(QAction * );
-
 
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);
