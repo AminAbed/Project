@@ -343,6 +343,9 @@ void MainWindow::menuRequest(QPoint pos)
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
     actionREAdd = addSubMenu->addAction( "RE");
+
+
+   // qDebug() << "checkable?" << actionREAdd->isCheckable() << "enabled?" << actionREAdd->isEnabled();
     actionEREAdd = addSubMenu->addAction( "ERE" );
     actionO2Add = addSubMenu->addAction( "O2" );
     actionMinTempAdd = addSubMenu->addAction( "Min Temp" );
@@ -376,13 +379,32 @@ void MainWindow::menuRequest(QPoint pos)
     menu->popup(ui->plotView->mapToGlobal(pos));
 }
 
+bool MainWindow::removeGraphByAction(QAction * action)
+{
+    int foundIndex = -1;
+    bool success = false;
+    QString theName = action->text();
+    for (int i=0; i<ui->plotView->graphCount(); ++i)
+    {
+      if (ui->plotView->graph(i)->name() == theName)
+      {
+        foundIndex = i;
+        ui->plotView->removeGraph(foundIndex);
+        success = true;
+        break;
+      }
+    }
+    return success;
+}
+
 void MainWindow::actionMapper(QAction * action)
 {
     // add a graph
+    ui->statusBar->showMessage("Loading the graph...");
     if (action == actionREAdd )
     {
-//        actionEREAdd->setChecked(true);
-//        actionEREAdd->setEnabled(false);
+//        actionRERemove->setEnabled(true);
+//        actionREAdd->setEnabled(false);
         plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
     }
     else if (action == actionEREAdd)
@@ -409,37 +431,41 @@ void MainWindow::actionMapper(QAction * action)
     {
         plot(MainWindow::minRH, Qt::darkGreen, "Min RH");
     }
+
+
     // remove a graph
     if (action == actionRERemove )
     {
-        ui->plotView->removeGraph(MainWindow::respiratoryEnthalpy);
-        actionEREAdd->setChecked(false);
-        actionEREAdd->setEnabled(true);
+        this->removeGraphByAction(action);
+//        actionRERemove->setEnabled(false);
+//        actionREAdd->setEnabled(true);
     }
     else if (action == actionERERemove)
     {
-        ui->plotView->removeGraph(MainWindow::eRespiratoryEnthalpy);
+        this->removeGraphByAction(action);
     }
     else if (action == actionO2Remove)
     {
-        ui->plotView->removeGraph(MainWindow::O2Consumption);
+        this->removeGraphByAction(action);
     }
     else if (action == actionMaxTempRemove)
     {
-        ui->plotView->removeGraph(MainWindow::maxTemp);
+        this->removeGraphByAction(action);
     }
     else if (action == actionMinTempRemove)
     {
-        ui->plotView->removeGraph(MainWindow::minTemp);
+        this->removeGraphByAction(action);
     }
     else if (action == actionMaxRHRemove)
     {
-        ui->plotView->removeGraph(MainWindow::maxRH);
+        this->removeGraphByAction(action);
     }
     else if (action == actionMinRHRemove)
     {
-        ui->plotView->removeGraph(MainWindow::minRH);
+        this->removeGraphByAction(action);
     }
+    ui->plotView->replot();
+    ui->statusBar->showMessage(" ");
 }
 
 

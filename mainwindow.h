@@ -23,6 +23,7 @@ public:
     void setupFileSystemView();
     void populateTable();
     void setupGraph();
+    bool removeGraphByAction(QAction * );
 
 private:
     Ui::MainWindow *ui;
