@@ -25,6 +25,8 @@ public:
     void setupGraph();
     bool removeGraphByAction(QAction * );
     void toggleMenu();
+    void restoreWindowState();
+    void saveWindowState();
 
 private:
     Ui::MainWindow *ui;

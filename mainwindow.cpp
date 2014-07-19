@@ -12,6 +12,7 @@
 #include <QVector>
 #include <QDateTime>
 #include <QToolTip>
+#include <QSettings>
 #include "QCustomPlot.h"
 
 #define COLUMN_COUNT 14
@@ -33,6 +34,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
+
+    //setWindowTitle( windowTitle() + " (" + Version::BUILD_NO + ")" );
+
+    restoreWindowState();
     //this->checkFilePathLine();
 
     // install eventFilter
@@ -46,11 +51,36 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->splitter->setSizes(sizes);
 }
 
+
 MainWindow::~MainWindow()
 {
+    saveWindowState();
     delete ui;
 }
 
+void MainWindow::restoreWindowState()
+{
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    this->resize(settings.value("size", QSize(640, 480)).toSize());
+    this->move(settings.value("pos", QPoint(0, 0)).toPoint());
+    if (settings.value("isMaximized", false).toBool())
+    {
+        this->setWindowState(Qt::WindowMaximized);
+    }
+}
+
+void MainWindow::saveWindowState()
+{
+    QSettings settings;
+    settings.beginGroup("MainWindow");
+    settings.setValue("isMaximized", this->isMaximized());
+    if (! this->isMaximized())
+    {
+        settings.setValue("size", this->size());
+        settings.setValue("pos", this->pos());
+    }
+}
 void MainWindow::on_actionOpen_triggered()
 {
     ui->pageControl->setCurrentWidget(ui->fileSystemPage);
@@ -155,8 +185,19 @@ void MainWindow::setupFileSystemView()
     fileSystemModel->setHeaderData(1,Qt::Horizontal,Qt::EditRole);
     ui->fileSystemView->clearSelection();
 
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    QString lastDir = settings.value("app/last_dir", "").toString();
+    qDebug() << "lasDir" << lastDir;
 
-    fileSystemModel->setRootPath("C:/");
+    if(!lastDir.isEmpty())
+    {
+        fileSystemModel->setRootPath(lastDir);
+    }
+    else
+    {
+        fileSystemModel->setRootPath("C:/");
+    }
+
     fileSystemModel->setFilter(QDir::Dirs|QDir::Drives|QDir::NoDotAndDotDot|QDir::AllDirs|QDir::AllEntries);
 
     ui->fileSystemView->setModel(fileSystemModel);
@@ -174,6 +215,13 @@ void MainWindow::setupFileSystemView()
 
 int MainWindow::readSession(QString filePath)
 {
+
+    // remember the folder this file came from for later time
+    QFileInfo fileInfo(filePath);
+    QSettings settings;
+    settings.setValue("app/last_dir", fileInfo.absolutePath());
+
+
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly))
     {
