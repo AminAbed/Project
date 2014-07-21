@@ -75,6 +75,7 @@ private:
     QAction* actionMaxRHRemove;
     bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
 
+    QAction * settings;
 
 
 protected:

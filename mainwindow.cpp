@@ -35,6 +35,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
 
+    settings = ui->mainToolBar->addAction("Settings");
+    settings->setIcon(QIcon("image/settings.jpg"));
+    //settings->;
+
     //setWindowTitle( windowTitle() + " (" + Version::BUILD_NO + ")" );
 
     restoreWindowState();
@@ -83,6 +87,7 @@ void MainWindow::saveWindowState()
 }
 void MainWindow::on_actionOpen_triggered()
 {
+    ui->actionOpen->setEnabled(false);
     ui->pageControl->setCurrentWidget(ui->fileSystemPage);
     this->setupFileSystemView();
 
@@ -253,6 +258,8 @@ int MainWindow::readSession(QString filePath)
     //this->plot(MainWindow::O2Consumption, Qt::blue);
     this->populateTable();
     ui->pageControl->setCurrentWidget(ui->plotPage);
+    ui->actionOpen->setText("New Session");
+    ui->actionOpen->setEnabled(true);
 
     return 0;
 }
