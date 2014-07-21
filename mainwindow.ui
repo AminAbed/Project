@@ -170,6 +170,9 @@
              <property name="text">
               <string/>
              </property>
+             <property name="pixmap">
+              <pixmap resource="images.qrc">:/images/settings.jpg</pixmap>
+             </property>
             </widget>
            </item>
           </layout>

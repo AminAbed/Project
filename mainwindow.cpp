@@ -60,7 +60,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::restoreWindowState()
 {
-    QSettings settings;
+    QSettings settings("../settings.ini", QSettings::IniFormat);
     settings.beginGroup("MainWindow");
     this->resize(settings.value("size", QSize(640, 480)).toSize());
     this->move(settings.value("pos", QPoint(0, 0)).toPoint());
@@ -72,7 +72,7 @@ void MainWindow::restoreWindowState()
 
 void MainWindow::saveWindowState()
 {
-    QSettings settings;
+    QSettings settings("../settings.ini", QSettings::IniFormat);
     settings.beginGroup("MainWindow");
     settings.setValue("isMaximized", this->isMaximized());
     if (! this->isMaximized())
@@ -142,7 +142,6 @@ void MainWindow::on_openButton_clicked()
                 .arg(patientInformation["Height"])
                 .arg(patientInformation["Weight"]));
         this->readSession(filePath);
-       // this->setupGraph();
     }
 }
 
@@ -160,6 +159,8 @@ void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelectio
 void MainWindow::updatePatientInfoBox()
 {
     QString filePath = ui->filePathline->text();
+    if (!filePath.contains(".csv")) return;
+
     PatientInfo patientInfo;
     PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
     ui->patientIDValueLabel->setText(patientInformation["Patient"]);
@@ -182,46 +183,41 @@ void MainWindow::checkFilePathLine()
 void MainWindow::setupFileSystemView()
 {
     fileSystemModel = new QFileSystemModel(this);
-    fileSystemModel->setHeaderData(1,Qt::Horizontal,Qt::EditRole);
-    ui->fileSystemView->clearSelection();
-
-    QSettings settings("settings.ini", QSettings::IniFormat);
-    QString lastDir = settings.value("app/last_dir", "").toString();
-    qDebug() << "lasDir" << lastDir;
-
-    if(!lastDir.isEmpty())
-    {
-        fileSystemModel->setRootPath(lastDir);
-    }
-    else
-    {
-        fileSystemModel->setRootPath("C:/");
-    }
-
     fileSystemModel->setFilter(QDir::Dirs|QDir::Drives|QDir::NoDotAndDotDot|QDir::AllDirs|QDir::AllEntries);
-
+    fileSystemModel->setHeaderData(1,Qt::Horizontal,Qt::EditRole);
+    fileSystemModel->setRootPath("");
+    ui->fileSystemView->clearSelection();
     ui->fileSystemView->setModel(fileSystemModel);
-
-    QModelIndex index = fileSystemModel->index("C:/");
-//    ui->fileSystemView->setItemsExpandable(false);
     ui->fileSystemView->header()->setMovable(false);
-//    ui->treeView->header()->resizeSections(QHeaderView::ResizeToContents);
     ui->fileSystemView->hideColumn(1);
     ui->fileSystemView->hideColumn(2);
-    ui->fileSystemView->setColumnWidth(0,350);
+    ui->fileSystemView->setColumnWidth(0,250);
     ui->fileSystemView->setColumnWidth(3,250);
-    ui->fileSystemView->setRootIndex(index);
+
+    QSettings settings("../settings.ini", QSettings::IniFormat);
+    QString lastDir = settings.value("app/last_dir", "").toString();
+    if (lastDir.isEmpty()) return;
+
+    QModelIndex index = fileSystemModel->index(lastDir);
+
+    while (index.isValid())
+    {
+        ui->fileSystemView->expand(index);
+        index = fileSystemModel->parent(index);
+    }
+    // now that all is expanded, scroll to the selected folder
+     ui->fileSystemView->scrollTo(index, QAbstractItemView::PositionAtTop);
+     ui->fileSystemView->setRootIndex(index);
 }
 
 int MainWindow::readSession(QString filePath)
 {
-
     // remember the folder this file came from for later time
     QFileInfo fileInfo(filePath);
-    QSettings settings;
+    QSettings settings("../settings.ini", QSettings::IniFormat);
     settings.setValue("app/last_dir", fileInfo.absolutePath());
 
-
+    if (!filePath.contains(".csv")) return -1;
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly))
     {
@@ -387,6 +383,7 @@ void MainWindow::removeSelectedGraph()
 
 void MainWindow::removeAllGraphs()
 {
+    RE = ERE = O2 = MinTemp = MaxTemp = MinRH = MaxRH = false;
     ui->plotView->clearGraphs();
     ui->plotView->replot();
 }
