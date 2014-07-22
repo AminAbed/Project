@@ -35,9 +35,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
 
-    settings = ui->mainToolBar->addAction("Settings");
-    settings->setIcon(QIcon("image/settings.jpg"));
-    //settings->;
 
     //setWindowTitle( windowTitle() + " (" + Version::BUILD_NO + ")" );
 
