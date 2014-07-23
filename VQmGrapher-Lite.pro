@@ -16,15 +16,18 @@ SOURCES += main.cpp\
     CustomLineEdit.cpp \
     PatientInfo.cpp \
     MainWindow.cpp \
-    QCustomPlot.cpp
+    QCustomPlot.cpp \
+    SettingsPage.cpp
 
 HEADERS  += \
     CustomLineEdit.h \
     PatientInfo.h \
     MainWindow.h \
-    QCustomPlot.h
+    QCustomPlot.h \
+    SettingsPage.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    SettingsPage.ui
 
 RESOURCES += \
     images.qrc
