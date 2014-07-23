@@ -14,10 +14,9 @@
 #include <QToolTip>
 #include <QSettings>
 #include "QCustomPlot.h"
+#include "SettingsPage.h"
 
 #define COLUMN_COUNT 14
-
-
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -34,6 +33,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setMinimumHeight(32);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
+    ui->actionSettings->setVisible(false);
+
+
+
 
 
     //setWindowTitle( windowTitle() + " (" + Version::BUILD_NO + ")" );
@@ -116,6 +119,14 @@ void MainWindow::on_actionOpen_triggered()
     ui->filePathline->clear();
 }
 
+void MainWindow::on_actionSettings_triggered()
+{
+    connect(&settingsPage, SIGNAL(removeAll()), this, SLOT(removeAllGraphs()));
+    connect(&settingsPage, SIGNAL(plot(QString ,bool )), this, SLOT(actionMapper(QString ,bool )));
+    connect(&settingsPage, SIGNAL(remove(QString ,bool )), this, SLOT(actionMapper(QString ,bool )));
+    connect(this, SIGNAL(toggleCheckBox(QString ,bool )), &settingsPage, SLOT(updateCheckBoxes(QString ,bool )));
+    settingsPage.show();
+}
 
 
 void MainWindow::on_openButton_clicked()
@@ -257,6 +268,7 @@ int MainWindow::readSession(QString filePath)
     ui->pageControl->setCurrentWidget(ui->plotPage);
     ui->actionOpen->setText("New Session");
     ui->actionOpen->setEnabled(true);
+    ui->actionSettings->setVisible(true);
 
     return 0;
 }
@@ -392,6 +404,24 @@ void MainWindow::removeAllGraphs()
     ui->plotView->replot();
 }
 
+bool MainWindow::removeGraphByName(QString name)
+{
+    int foundIndex = -1;
+    bool success = false;
+    for (int i=0; i<ui->plotView->graphCount(); ++i)
+    {
+      if (ui->plotView->graph(i)->name() == name)
+      {
+        foundIndex = i;
+        ui->plotView->removeGraph(foundIndex);
+        ui->plotView->replot();
+        success = true;
+        break;
+      }
+    }
+    return success;
+}
+
 void MainWindow::menuRequest(QPoint pos)
 {
     QMenu * menu = new QMenu(this);
@@ -468,44 +498,105 @@ bool MainWindow::removeGraphByAction(QAction * action)
     }
     return success;
 }
+void MainWindow::actionMapper(QString action, bool checked )
+{
+    QString triggeredAction = action;
+    if (triggeredAction == "RE" && checked) actionMapper(actionREAdd);
+    else if(triggeredAction == "RE" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       RE = false;
+    }
+
+    if (triggeredAction == "ERE" && checked) actionMapper(actionEREAdd);
+    else if(triggeredAction == "ERE" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       ERE = false;
+    }
+
+    if (triggeredAction == "O2" && checked) actionMapper(actionO2Add);
+    else if(triggeredAction == "O2" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       O2 = false;
+    }
+
+    if (triggeredAction == "Min Temp" && checked) actionMapper(actionMinTempAdd);
+    else if(triggeredAction == "Min Temp" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       MinTemp = false;
+    }
+
+    if (triggeredAction == "Max Temp" && checked) actionMapper(actionMaxTempAdd);
+    else if(triggeredAction == "Max Temp" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       MaxTemp = false;
+    }
+
+    if (triggeredAction == "Min RH" && checked) actionMapper(actionMinRHAdd);
+    else if(triggeredAction == "Min RH" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       MinRH = false;
+    }
+
+    if (triggeredAction == "Max RH" && checked) actionMapper(actionMaxRHAdd);
+    else if(triggeredAction == "Max RH" && !checked)
+    {
+       removeGraphByName(triggeredAction);
+       MaxRH = false;
+    }
+}
 
 void MainWindow::actionMapper(QAction * action)
 {
     // add a graph
+
     ui->statusBar->showMessage("Loading the graph...");
     if (action == actionREAdd )
     {
         plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
+    //    emit toggleCheckBox(action->text(), true);
         RE = true;
+
     }
     else if (action == actionEREAdd)
     {
         plot(MainWindow::eRespiratoryEnthalpy, Qt::darkRed, "ERE");
+  //      emit toggleCheckBox(actionName, true);
         ERE = true;
     }
     else if (action == actionO2Add)
     {
         plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
+  //      emit toggleCheckBox(actionName, true);
         O2 = true;
     }
     else if (action == actionMaxTempAdd)
     {
         plot(MainWindow::maxTemp, Qt::blue, "Max Temp");
+   //     emit toggleCheckBox(actionName, true);
         MaxTemp = true;
     }
     else if (action == actionMinTempAdd)
     {
         plot(MainWindow::minTemp, Qt::darkBlue, "Min Temp");
+   //     emit toggleCheckBox(actionName, true);
         MinTemp = true;
     }
     else if (action == actionMaxRHAdd)
     {
         plot(MainWindow::maxRH, Qt::green, "Max RH");
+   //     emit toggleCheckBox(actionName, true);
         MaxRH = true;
     }
     else if (action == actionMinRHAdd)
     {
         plot(MainWindow::minRH, Qt::darkGreen, "Min RH");
+    //    emit toggleCheckBox(actionName, true);
         MinRH = true;
     }
 
@@ -513,36 +604,43 @@ void MainWindow::actionMapper(QAction * action)
     if (action == actionRERemove )
     {
         this->removeGraphByAction(action);
+ //       emit toggleCheckBox(action->text(), false);
         RE = false;
     }
     else if (action == actionERERemove)
     {
         this->removeGraphByAction(action);
+   //     emit toggleCheckBox(actionName, false);
         ERE = false;
     }
     else if (action == actionO2Remove)
     {
         this->removeGraphByAction(action);
+    //    emit toggleCheckBox(actionName, false);
         O2 = false;
     }
     else if (action == actionMaxTempRemove)
     {
         this->removeGraphByAction(action);
+   //     emit toggleCheckBox(actionName, false);
         MaxTemp = false;
     }
     else if (action == actionMinTempRemove)
     {
         this->removeGraphByAction(action);
+ //       emit toggleCheckBox(actionName, false);
         MinTemp = false;
     }
     else if (action == actionMaxRHRemove)
     {
         this->removeGraphByAction(action);
+  //      emit toggleCheckBox(actionName, false);
         MaxRH = false;
     }
     else if (action == actionMinRHRemove)
     {
         this->removeGraphByAction(action);
+    //    emit toggleCheckBox(actionName, false);
         MinRH = false;
     }
     ui->plotView->replot();
@@ -555,7 +653,7 @@ void MainWindow::toggleMenu()
     {
         actionREAdd->setChecked(true);
         actionREAdd->setEnabled(false);
-        actionRERemove->setEnabled(true);
+        actionRERemove->setEnabled(true); 
     }
     else
     {

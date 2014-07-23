@@ -180,7 +180,7 @@
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QWidget" name="">
+          <widget class="QWidget" name="layoutWidget">
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
              <widget class="QCustomPlot" name="plotView" native="true">
@@ -190,8 +190,6 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
-              <zorder>verticalScrollBar</zorder>
-              <zorder>verticalScrollBar</zorder>
              </widget>
             </item>
             <item row="0" column="1">
@@ -297,12 +295,6 @@
          </widget>
         </item>
        </layout>
-       <zorder>frame</zorder>
-       <zorder>splitter</zorder>
-       <zorder>verticalScrollBar</zorder>
-       <zorder>horizontalScrollBar</zorder>
-       <zorder>horizontalScrollBar</zorder>
-       <zorder>horizontalScrollBar</zorder>
       </widget>
      </widget>
     </item>
@@ -335,11 +327,12 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionOpen"/>
    <addaction name="separator"/>
    <addaction name="actionSettings"/>
+   <addaction name="separator"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">

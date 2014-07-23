@@ -6,6 +6,7 @@
 #include <QItemSelection>
 #include <CustomLineEdit.h>
 #include "QCustomPlot.h"
+#include "SettingsPage.h"
 
 
 typedef QList <double> DoublesList;
@@ -75,6 +76,8 @@ private:
     QAction* actionMaxRHRemove;
     bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
 
+    SettingsPage  settingsPage;
+
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -85,6 +88,7 @@ protected:
 
 public slots:
     void on_actionOpen_triggered();
+    void on_actionSettings_triggered();
     void on_openButton_clicked();
     void updatePatientInfoBox();
     int readSession(QString );
@@ -95,7 +99,9 @@ public slots:
     void plot();
     void removeSelectedGraph();
     void removeAllGraphs();
+    bool removeGraphByName(QString );
     void actionMapper(QAction * );
+    void actionMapper(QString, bool );
 
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);
@@ -112,6 +118,9 @@ public slots:
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
     void on_cancelButton_clicked();
+
+signals:
+    void toggleCheckBox(QString ,bool );
 };
 
 #endif // MAINWINDOW_H
