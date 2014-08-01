@@ -27,7 +27,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="pageControl">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="startPage"/>
       <widget class="QWidget" name="fileSystemPage">
@@ -331,8 +331,9 @@
    </attribute>
    <addaction name="actionOpen"/>
    <addaction name="separator"/>
-   <addaction name="actionSettings"/>
    <addaction name="separator"/>
+   <addaction name="actionOpenAnotherWindow"/>
+   <addaction name="actionSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
@@ -360,6 +361,18 @@
    </property>
    <property name="toolTip">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionOpenAnotherWindow">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/images/open.jpg</normaloff>:/images/open.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;New Window</string>
+   </property>
+   <property name="toolTip">
+    <string>New Window</string>
    </property>
   </action>
  </widget>

@@ -57,6 +57,7 @@ private:
 
     // universal x-axis (timestamps)
     QVector<double> x;
+    QList<int> indexes;
 
     // context menu actions
     QAction* actionREAdd;
@@ -89,6 +90,7 @@ protected:
 public slots:
     void on_actionOpen_triggered();
     void on_actionSettings_triggered();
+    void on_actionOpenAnotherWindow_triggered();
     void on_openButton_clicked();
     void updatePatientInfoBox();
     int readSession(QString );

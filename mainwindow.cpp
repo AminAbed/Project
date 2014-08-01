@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QList<int> sizes;
     sizes << 250 << 100;
     ui->splitter->setSizes(sizes);
+
 }
 
 
@@ -89,6 +90,7 @@ void MainWindow::on_actionOpen_triggered()
 {
     ui->actionOpen->setEnabled(false);
     ui->pageControl->setCurrentWidget(ui->fileSystemPage);
+    ui->actionOpenAnotherWindow->setVisible(false);
     this->setupFileSystemView();
 
 
@@ -121,10 +123,21 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
+   // QSettings settings("../settings.ini", QSettings::IniFormat);
+   // settings.value("size", QSize(640, 480)).toSize());
+  //  this->move(settings.value("pos",);
     connect(&settingsPage, SIGNAL(removeAll()), this, SLOT(removeAllGraphs()));
     connect(&settingsPage, SIGNAL(plot(QString ,bool )), this, SLOT(actionMapper(QString ,bool )));
     connect(&settingsPage, SIGNAL(remove(QString ,bool )), this, SLOT(actionMapper(QString ,bool )));
     connect(this, SIGNAL(toggleCheckBox(QString ,bool )), &settingsPage, SLOT(updateCheckBoxes(QString ,bool )));
+
+//    QPoint pos = this->pos();
+//    QSize size = this->size();
+//    QPoint settingsPagePos_x = pos.x() + size.width();
+//    QPoint settingsPagePos_y = pos.y();
+
+
+   // settingsPage.move(700,00);
     settingsPage.show();
 }
 
@@ -266,8 +279,10 @@ int MainWindow::readSession(QString filePath)
     //this->plot(MainWindow::O2Consumption, Qt::blue);
     this->populateTable();
     ui->pageControl->setCurrentWidget(ui->plotPage);
-    ui->actionOpen->setText("New Session");
+    //ui->actionOpen->setText("New Session");
     ui->actionOpen->setEnabled(true);
+    ui->actionOpen->setVisible(false);
+    ui->actionOpenAnotherWindow->setVisible(true);
     ui->actionSettings->setVisible(true);
 
     return 0;
@@ -312,8 +327,19 @@ void MainWindow::setupGraph()
         double dTime = (double) tmpTime.toTime_t();
         x.append(dTime);
     }
-    ui->plotView->xAxis->setRange(x.first(), x.last());
 
+    // finding continious segments in timestamp
+    indexes.append(0);
+    for (int i = 0; i <x.size(); i++)
+    {
+        if(x[i+1] - x[i] > 300)
+        {
+            indexes.append(i+1);
+        }
+    }
+    indexes.append(x.count());
+
+    ui->plotView->xAxis->setRange(x.first(), x.last());
     ui->plotView->xAxis->setTickLabelType(QCPAxis::ltDateTime);
     ui->plotView->xAxis->setDateTimeFormat("yyyy/MM/dd\nHH:mm:ss");
     //ui->plotView->axisRect()->setupFullAxesBox();
@@ -382,10 +408,31 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
  //   ui->plotView->graph()->setBrush(QBrush(QColor(color, 35)));
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
-    ui->plotView->graph()->setData(x, value);
-    ui->plotView->replot();
+    // plotting continuous segments
+//    QVector<double> xDivided;
+//    QVector<double> yDivided;
 
-
+//    for (int i = 0; i < indexes.size(); i++)
+//    {
+//        qDebug() << " i is " << i;
+//        for(int j = indexes.at(i); j <indexes.at(i+1); j++)
+//        {
+//            xDivided.append(x.at(j));
+//            yDivided.append(value.at(j));
+//        }
+//        QDateTime xDateTime;
+//        for(int k = 0; k < xDivided.size(); k++)
+//        {
+//            xDateTime.setTime_t(xDivided.at(k));
+//            qDebug() << xDateTime;
+//        }
+//        ui->plotView->graph()->setData(xDivided, yDivided);
+        ui->plotView->graph()->setData(x,value);
+        ui->plotView->replot();
+//        xDivided.clear();
+//        yDivided.clear();
+//    }
+   // ui->plotView->graph()->setData(x, value);
 }
 
 void MainWindow::removeSelectedGraph()
@@ -972,6 +1019,14 @@ void MainWindow::selectionChanged()
     }
   }
 }
+
+void MainWindow::on_actionOpenAnotherWindow_triggered()
+{
+    //qDebug() << "Starting" << QCoreApplication::applicationFilePath() ;
+    //QProcess::startDetached( QCoreApplication::applicationFilePath(), QStringList() );
+    //ui->statusbar->showMessage(tr("Starting %1").arg(QCoreApplication::applicationFilePath()), 5000);
+}
+
 
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
