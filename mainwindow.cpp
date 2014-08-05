@@ -14,6 +14,7 @@
 #include <QToolTip>
 #include <QSettings>
 #include <QProcess>
+#include <QFileDialog>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -1031,7 +1032,18 @@ void MainWindow::on_actionOpenAnotherWindow_triggered()
 
 void MainWindow::on_actionPDF_triggered()
 {
+    QString fileName = QFileDialog::getSaveFileName(this, "Save document...", qApp->applicationDirPath(), "*.pdf");
+    if (!fileName.isEmpty())
+    {
+//      QPrinter printer;
+//      printer.setFullPage(true);
+//      printer.setPaperSize(QPrinter::A4);
+//      printer.setOrientation(QPrinter::Portrait);
+//      printer.setOutputFormat(QPrinter::PdfFormat);
+//      printer.setOutputFileName(fileName);
 
+      ui->plotView->savePdf(fileName);
+    }
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
