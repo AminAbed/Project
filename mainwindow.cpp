@@ -13,6 +13,7 @@
 #include <QDateTime>
 #include <QToolTip>
 #include <QSettings>
+#include <QProcess>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -34,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
     ui->actionSettings->setVisible(false);
+    ui->actionOpenAnotherWindow->setVisible(false);
+    ui->actionPDF->setVisible(false);
 
 
 
@@ -90,7 +93,6 @@ void MainWindow::on_actionOpen_triggered()
 {
     ui->actionOpen->setEnabled(false);
     ui->pageControl->setCurrentWidget(ui->fileSystemPage);
-    ui->actionOpenAnotherWindow->setVisible(false);
     this->setupFileSystemView();
 
 
@@ -274,15 +276,15 @@ int MainWindow::readSession(QString filePath)
         }
     }
 
-   // this->plot();
     this->setupGraph();
-    //this->plot(MainWindow::O2Consumption, Qt::blue);
     this->populateTable();
+
     ui->pageControl->setCurrentWidget(ui->plotPage);
-    //ui->actionOpen->setText("New Session");
+
     ui->actionOpen->setEnabled(true);
     ui->actionOpen->setVisible(false);
     ui->actionOpenAnotherWindow->setVisible(true);
+    ui->actionPDF->setVisible(true);
     ui->actionSettings->setVisible(true);
 
     return 0;
@@ -1022,12 +1024,15 @@ void MainWindow::selectionChanged()
 
 void MainWindow::on_actionOpenAnotherWindow_triggered()
 {
-    //qDebug() << "Starting" << QCoreApplication::applicationFilePath() ;
-    //QProcess::startDetached( QCoreApplication::applicationFilePath(), QStringList() );
-    //ui->statusbar->showMessage(tr("Starting %1").arg(QCoreApplication::applicationFilePath()), 5000);
+    qDebug() << "Starting" << QCoreApplication::applicationFilePath() ;
+    QProcess::startDetached( QCoreApplication::applicationFilePath(), QStringList() );
+    ui->statusBar->showMessage(tr("Starting %1").arg(QCoreApplication::applicationFilePath()), 5000);
 }
 
+void MainWindow::on_actionPDF_triggered()
+{
 
+}
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
 {

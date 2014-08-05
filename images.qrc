@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>images/open.jpg</file>
         <file>images/settings.jpg</file>
+        <file>images/pdf.jpg</file>
     </qresource>
 </RCC>
