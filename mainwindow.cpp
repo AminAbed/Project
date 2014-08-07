@@ -15,6 +15,7 @@
 #include <QSettings>
 #include <QProcess>
 #include <QFileDialog>
+#include <QToolButton>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -285,8 +286,24 @@ int MainWindow::readSession(QString filePath)
     ui->actionOpen->setEnabled(true);
     ui->actionOpen->setVisible(false);
     ui->actionOpenAnotherWindow->setVisible(true);
-    ui->actionPDF->setVisible(true);
+//    ui->actionPDF->setVisible(true);
     ui->actionSettings->setVisible(true);
+
+    // create a context menue in toolbar
+    QMenu *menu = new QMenu();
+    QAction * plotPDF = new QAction("Plot to PDF", this);
+    QAction * tablePDF = new QAction("Table to PDF", this);
+    menu->addAction(plotPDF);
+    menu->addAction(tablePDF);
+
+    QToolButton* pdfButton = new QToolButton();
+    pdfButton->setIcon(QIcon("://images/pdf.jpg"));
+    pdfButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    pdfButton->setText("PDF");
+    pdfButton->setToolTip("Save to PDF");
+    pdfButton->setMenu(menu);
+    pdfButton->setPopupMode(QToolButton::InstantPopup);
+    ui->mainToolBar->addWidget(pdfButton);
 
     return 0;
 }
@@ -332,15 +349,16 @@ void MainWindow::setupGraph()
     }
 
     // finding continious segments in timestamp
-    indexes.append(0);
-    for (int i = 0; i <x.size(); i++)
-    {
-        if(x[i+1] - x[i] > 300)
-        {
-            indexes.append(i+1);
-        }
-    }
-    indexes.append(x.count());
+//    indexes.append(0);
+//    for (int i = 0; i <x.size(); i++)
+//    {
+//        if(x[i+1] - x[i] > 300)
+//        {
+//            indexes.append(i+1);
+//        }
+//    }
+//    indexes.append(x.count());
+//    qDebug() << indexes;
 
     ui->plotView->xAxis->setRange(x.first(), x.last());
     ui->plotView->xAxis->setTickLabelType(QCPAxis::ltDateTime);
@@ -405,15 +423,23 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     QVector<double> value(readings[parameter].size());
     value = readings[parameter].toVector();
     ui->plotView->addGraph();
-
-    ui->plotView->graph()->setName(name);
     ui->plotView->graph()->setPen(QPen(color));
+    ui->plotView->graph()->setName(name);
+
  //   ui->plotView->graph()->setBrush(QBrush(QColor(color, 35)));
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
     // plotting continuous segments
 //    QVector<double> xDivided;
 //    QVector<double> yDivided;
+
+//    QList<Qt::GlobalColor> myColors;
+//    myColors.append(Qt::red);
+//    myColors.append(Qt::green);
+//    myColors.append(Qt::gray);
+//    myColors.append(Qt::blue);
+//    myColors.append(Qt::black);
+//    myColors.append(Qt::cyan);
 
 //    for (int i = 0; i < indexes.size(); i++)
 //    {
@@ -429,9 +455,12 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
 //            xDateTime.setTime_t(xDivided.at(k));
 //            qDebug() << xDateTime;
 //        }
-//        ui->plotView->graph()->setData(xDivided, yDivided);
+//        color = myColors[i%6];
+//        ui->plotView->graph()->setPen(QPen(color));
+//        ui->plotView->graph()->setData(xPlot, yPlot);
         ui->plotView->graph()->setData(x,value);
         ui->plotView->replot();
+
 //        xDivided.clear();
 //        yDivided.clear();
 //    }
@@ -1043,6 +1072,7 @@ void MainWindow::on_actionPDF_triggered()
 //      printer.setOutputFileName(fileName);
 
       ui->plotView->savePdf(fileName);
+      qDebug() << "Hello";
     }
 }
 
