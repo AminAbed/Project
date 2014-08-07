@@ -31,3 +31,7 @@ FORMS    += mainwindow.ui \
 
 RESOURCES += \
     images.qrc
+
+OTHER_FILES += \
+    scripts/gen_version_header.sh \
+    scripts/gitrev.sh
