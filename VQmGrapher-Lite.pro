@@ -30,8 +30,12 @@ FORMS    += mainwindow.ui \
     SettingsPage.ui
 
 RESOURCES += \
-    images.qrc
+    images.qrc \
+    resources/data.qrc
 
 OTHER_FILES += \
     scripts/gen_version_header.sh \
-    scripts/gitrev.sh
+    scripts/gitrev.sh \
+    resources/export-template.html
+
+QT += webkit
