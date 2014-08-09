@@ -5,6 +5,7 @@
 #include <QFileSystemModel>
 #include <QItemSelection>
 #include <CustomLineEdit.h>
+#include <QTableWidget>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -78,6 +79,8 @@ private:
     bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
 
     SettingsPage  settingsPage;
+    QString summaryFileName;
+    QString filePath;
 
 
 protected:
@@ -91,7 +94,8 @@ public slots:
     void on_actionOpen_triggered();
     void on_actionSettings_triggered();
     void on_actionOpenAnotherWindow_triggered();
-    void on_actionPDF_triggered();
+    void on_actionPlotPDF_triggered();
+    void on_actionTablePDF_triggered();
     void on_openButton_clicked();
     void updatePatientInfoBox();
     int readSession(QString );
@@ -105,6 +109,10 @@ public slots:
     bool removeGraphByName(QString );
     void actionMapper(QAction * );
     void actionMapper(QString, bool );
+
+    QString generateHTML();
+    void saveHTMLToPDF(bool );
+
 
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);
