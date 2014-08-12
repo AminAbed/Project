@@ -6,6 +6,7 @@
 #include <QItemSelection>
 #include <CustomLineEdit.h>
 #include <QTableWidget>
+#include <QtWebKit/QWebView>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -111,8 +112,7 @@ public slots:
     void actionMapper(QString, bool );
 
     QString generateHTML();
-    void saveHTMLToPDF(bool );
-
+    void saveHTMLToPDF(QWebView * );
 
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);

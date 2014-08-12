@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui webkit
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -37,5 +37,3 @@ OTHER_FILES += \
     scripts/gen_version_header.sh \
     scripts/gitrev.sh \
     resources/export-template.html
-
-QT += webkit

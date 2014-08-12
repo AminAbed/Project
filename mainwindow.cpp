@@ -1080,99 +1080,23 @@ void MainWindow::on_actionPlotPDF_triggered()
     fileDialog.selectFile(filePath + "_plot.pdf");
     int ret = fileDialog.exec();
     if (ret == QDialog::Accepted)
-        ui->plotView->savePdf(filePath + "_plot.pdf", false, 3508, 2480);
+    {
+        QStringList fileName = fileDialog.selectedFiles();
+        ui->plotView->savePdf(fileName[0], false, 3508, 2480);
+    }
 }
 
 void MainWindow::on_actionTablePDF_triggered()
 {
     QWebView * htmlRenderer = new QWebView();
     htmlRenderer->setHtml(generateHTML());
-    connect(htmlRenderer, SIGNAL(loadFinished(bool)), this, SLOT(saveHTMLToPDF(bool)));
-//    QString tableString;
-
-//    // table header
-//    for (int col = 0; col < ui->tableWidget->columnCount(); col ++)
-//    {
-//        QTableWidgetItem* item = ui->tableWidget->horizontalHeaderItem(col);
-//        if (item)
-//        {
-//            tableString.append(item->text());
-//            tableString.append("\t");
-//        }
-//    }
-//    tableString.append("\r\n");
-
-
-//    // table body
-//    for (int row = 0; row < ui->tableWidget->rowCount(); row ++ )
-//    {
-//        for (int col = 0; col < ui->tableWidget->columnCount(); col ++)
-//        {
-//            QTableWidgetItem* item = ui->tableWidget->item(row, col);
-//            if (item)
-//            {
-//                tableString.append(item->text());
-//                tableString.append("\t");
-//            }
-//        }
-//        tableString.append("\r\n");
-//    }
-
-//        QFileDialog fileDialog;
-//        fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
-//        fileDialog.setFileMode(QFileDialog::AnyFile);
-//        fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-//        fileDialog.setDirectory(".");
-
-//        fileDialog.selectFile(filePath + "_table.pdf");
-//        int ret = fileDialog.exec();
-//        if(ret == QDialog::Accepted)
-//        {
-//            QFile file("c://" + filePath + ".txt");
-//            if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-//                    return;
-//            QTextStream content (&file);
-//            content << tableString;
-//            file.close();
-
-//            QPrinter printer(QPrinter::HighResolution);
-//            printer.setOutputFileName(filePath + "_table.pdf");
-//            printer.setPaperSize(QPrinter::A4);
-//            printer.setResolution(600);
-//            printer.setOutputFormat(QPrinter::PdfFormat);
-//            printer.setFullPage(true);
-
-
-//            int width = 0;
-//            int height = 0;
-//            int columns = ui->tableWidget->columnCount();
-//            int rows = ui->tableWidget->rowCount();
-
-//           // pTableView->resizeColumnsToContents();
-
-//            for( int i = 0; i < columns; ++i ) {
-//                width += ui->tableWidget->columnWidth(i);
-//            }
-
-//            for( int i = 0; i < rows; ++i ) {
-//                height += ui->tableWidget->rowHeight(i);
-//            }
-
-//            ui->tableWidget->setFixedSize(width, height);
-//            ui->tableWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-//            ui->tableWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-//            QPainter painter (&printer);
-//            painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
-//            painter.scale(4,4);
-//            ui->tableWidget->render(&painter);
-//        }
-
+    this->saveHTMLToPDF(htmlRenderer);
 }
 
 QString tableWidgetToHTML( QTableWidget * table )
 {
     QString html;
+ //   qDebug() << table->rowCount() << table->columnCount();
     html = "<table>";
 
     html += "<thead><tr>";
@@ -1187,6 +1111,7 @@ QString tableWidgetToHTML( QTableWidget * table )
     }
     html += "</tr></thead>";
 
+
     html += "<tbody>";
     // table body
     for (int row = 0; row < table->rowCount(); row ++ )
@@ -1194,26 +1119,29 @@ QString tableWidgetToHTML( QTableWidget * table )
         html += "<tr>";
         for (int col = 0; col < table->columnCount(); col ++)
         {
+
             QTableWidgetItem* item = table->item(row, col);
+             qDebug() << row << col << item->text();
             if (item)
             {
                 html += "<td>" + item->text() + "</td>";
             }
         }
         html += "</tr>";
+        qDebug() << "end of each row" << html;
     }
+
     html += "</tbody></table>";
     return html;
 }
 
 QString MainWindow::generateHTML()
 {
-    // Load poor man's template from resource
+
+
     QString html ( (char*) QResource(":/export-template.html").data() );
-    // fill tempalte with versions
-    // should use templating library
     html = html
-//            .arg( ui->patientInfoLabel->text() )
+            .arg( ui->patientInfoLabel->text() )
 //            .arg( Version::getSoftwareId() )
 //            .arg( ui->patientInfoLabel->text() )
 //            .arg( pixmapToImgTag(hlChart) )
@@ -1222,38 +1150,42 @@ QString MainWindow::generateHTML()
 //            .arg( tableWidgetToHTML(ui->perBreath) )
 //            .arg( tableWidgetToHTML(ui->inhaleEntropies) )
             .arg(tableWidgetToHTML(ui->tableWidget))
+
     ;
     return html;
 }
 
-void MainWindow::saveHTMLToPDF(bool finished)
+
+void MainWindow::saveHTMLToPDF(QWebView * renderer)
 {
-    QWebView *htmlRenderer = qobject_cast<QWebView*>(QObject::sender());
+    QWebView *htmlRenderer = renderer;
     if ( htmlRenderer == NULL) return;
 
-    if (!finished)
+    QPrinter printer;
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setPrintRange(QPrinter::AllPages);
+    printer.setOrientation(QPrinter::Portrait);
+    printer.setPaperSize(QPrinter::Letter);
+    printer.setResolution(QPrinter::HighResolution);
+    printer.setFullPage(false);
+    printer.setNumCopies(1);
+    printer.setOutputFileName(filePath + "_table.pdf");
+
+    QFileDialog fileDialog;
+    fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    fileDialog.setFileMode(QFileDialog::AnyFile);
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setDirectory(".");
+    fileDialog.selectFile(filePath + "_table.pdf");
+
+    int ret = fileDialog.exec();
+    if(ret == QDialog::Accepted)
     {
-        delete htmlRenderer;
-        return;
+        QStringList fileName = fileDialog.selectedFiles();
+        printer.setOutputFileName(fileName[0]);
+        htmlRenderer->print(&printer);
     }
-
-//    QPrinter printer;
-////    printer.setPrinterName("Print to File (PDF)");
-//    printer.setOutputFormat(QPrinter::PdfFormat);
-//    printer.setPrintRange(QPrinter::AllPages);
-//    printer.setOrientation(QPrinter::Portrait);
-//    printer.setPaperSize(QPrinter::Letter);
-//    printer.setResolution(QPrinter::HighResolution);
-//    printer.setFullPage(false);
-//    printer.setNumCopies(1);
-
-//    QString outPath = QFileDialog::getSaveFileName(this, tr("Select save location"), ".", "*.pdf");
-//    if (!outPath.isEmpty())
-//    {
-//        printer.setOutputFileName(outPath);
-//        htmlRenderer->print(&printer);
-//    }
-    //    delete htmlRenderer;
+    delete renderer;
 }
 
 
