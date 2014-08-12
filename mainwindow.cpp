@@ -1096,7 +1096,6 @@ void MainWindow::on_actionTablePDF_triggered()
 QString tableWidgetToHTML( QTableWidget * table )
 {
     QString html;
- //   qDebug() << table->rowCount() << table->columnCount();
     html = "<table>";
 
     html += "<thead><tr>";
@@ -1111,7 +1110,6 @@ QString tableWidgetToHTML( QTableWidget * table )
     }
     html += "</tr></thead>";
 
-
     html += "<tbody>";
     // table body
     for (int row = 0; row < table->rowCount(); row ++ )
@@ -1121,16 +1119,13 @@ QString tableWidgetToHTML( QTableWidget * table )
         {
 
             QTableWidgetItem* item = table->item(row, col);
-             qDebug() << row << col << item->text();
             if (item)
             {
                 html += "<td>" + item->text() + "</td>";
             }
         }
         html += "</tr>";
-        qDebug() << "end of each row" << html;
     }
-
     html += "</tbody></table>";
     return html;
 }
