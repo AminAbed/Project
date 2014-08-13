@@ -153,32 +153,34 @@ void MainWindow::on_actionSettings_triggered()
 void MainWindow::on_openButton_clicked()
 {
     filePath = ui->filePathline->text();
-   // fileName1 = filePath;
+    qDebug() << filePath.endsWith(".csv");
 
-    if (!filePath.isEmpty() && !filePath.contains("_summaryFile"))
+    if (!filePath.isEmpty())
     {
-        QMessageBox::warning(this,"",tr("The supplied file is not supported."));
-    }
-    else if(filePath.isEmpty())
-    {
-        QMessageBox::warning(this,"",tr("Please provide a summary file for analysis."));
+        if(!filePath.endsWith(".csv") || !filePath.contains("_summaryFile"))
+        {
+            QMessageBox::warning(this,"",tr("The supplied file is not supported."));
+            return;
+        }
     }
     else
     {
-        // get patient's information
-        PatientInfo patientInfo;
-        PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
+        QMessageBox::warning(this,"",tr("Please provide a summary file for analysis."));
+        return;
+    }   
+    // get patient's information
+    PatientInfo patientInfo;
+    PatientInfo::PatientInformation patientInformation =  *(patientInfo.extractPatientInfo(filePath));
 
 
-        ui->patientInfoLabel->setText(
-                 tr("Patient Info:  ID #%1  |  Age: %2  |  Gender: %3  |  Height: %4  |  Weight: %5 ")
+    ui->patientInfoLabel->setText(
+                tr("Patient Info:  ID #%1  |  Age: %2  |  Gender: %3  |  Height: %4  |  Weight: %5 ")
                 .arg(patientInformation["Patient"])
-                .arg(patientInformation["Age"])
-                .arg(patientInformation["Gender"])
-                .arg(patientInformation["Height"])
-                .arg(patientInformation["Weight"]));
-        this->readSession(filePath);
-    }
+            .arg(patientInformation["Age"])
+            .arg(patientInformation["Gender"])
+            .arg(patientInformation["Height"])
+            .arg(patientInformation["Weight"]));
+    this->readSession(filePath);
 }
 
 void MainWindow::updateFilePathLine(const QItemSelection & , const QItemSelection & )
@@ -439,6 +441,8 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
 
+    this->addTracer(ui->plotView->graph());
+
     // plotting continuous segments
 //    QVector<double> xDivided;
 //    QVector<double> yDivided;
@@ -529,6 +533,10 @@ void MainWindow::menuRequest(QPoint pos)
 
     if (ui->plotView->graphCount() > 0 )
     {
+        QMenu * commentMenu = menu->addMenu("&Notes");
+        actionAddComment = commentMenu->addAction("&Add Notes");
+        actionRemoveComment = commentMenu->addAction("&Remove Notes");
+
         QMenu * removeMenu = menu->addMenu("&Remove");
         menu->addAction( "Remove All &Graphs", this, SLOT(removeAllGraphs()));
 
@@ -1174,6 +1182,30 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
         htmlRenderer->print(&printer);
     }
     delete renderer;
+}
+
+void MainWindow::addTracer(QCPGraph * selectedGraph)
+{
+    QCPItemTracer *phaseTracer = new QCPItemTracer(ui->plotView);
+    ui->plotView->addItem(phaseTracer);
+    //itemDemoPhaseTracer = phaseTracer; // so we can access it later in the bracketDataSlot for animation
+    phaseTracer->setGraph(selectedGraph);
+    phaseTracer->setGraphKey((x.at(100)));
+    phaseTracer->setInterpolating(true);
+    phaseTracer->setStyle(QCPItemTracer::tsCircle);
+    phaseTracer->setPen(QPen(Qt::black));
+    phaseTracer->setBrush(Qt::black);
+    phaseTracer->setSize(7);
+
+//    if(ui->customPlot->selectedGraphs().count() != 0)
+//    {
+//        const QCPDataMap *dataMap = ui->customPlot->selectedGraphs().first()->data();
+//        QMap<double, QCPData>::const_iterator i = dataMap->constBegin();
+//        while (i != dataMap->constEnd()) {
+//            qDebug() << i.key()<< ": " << i.value().key << ": " << i.value().value << endl;
+//            ++i;
+//        }
+//    }
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)

@@ -30,6 +30,7 @@ public:
     void toggleMenu();
     void restoreWindowState();
     void saveWindowState();
+    void addTracer(QCPGraph * );
 
 private:
     Ui::MainWindow *ui;
@@ -78,6 +79,9 @@ private:
     QAction* actionMinRHRemove;
     QAction* actionMaxRHRemove;
     bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
+
+    QAction * actionAddComment;
+    QAction * actionRemoveComment;
 
     SettingsPage  settingsPage;
     QString summaryFileName;
