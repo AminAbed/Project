@@ -431,24 +431,17 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     QVector<double> value(readings[parameter].size());
     value = readings[parameter].toVector();
     ui->plotView->addGraph();
+    ui->plotView->graph()->setLineStyle(QCPGraph::lsLine);
+    ui->plotView->graph()->setScatterStyle(QCPScatterStyle::ssPeace);
     ui->plotView->graph()->setPen(QPen(color));
     ui->plotView->graph()->setName(name);
 
- //   ui->plotView->graph()->setBrush(QBrush(QColor(color, 35)));
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
+
     // plotting continuous segments
 //    QVector<double> xDivided;
 //    QVector<double> yDivided;
-
-//    QList<Qt::GlobalColor> myColors;
-//    myColors.append(Qt::red);
-//    myColors.append(Qt::green);
-//    myColors.append(Qt::gray);
-//    myColors.append(Qt::blue);
-//    myColors.append(Qt::black);
-//    myColors.append(Qt::cyan);
-
 //    for (int i = 0; i < indexes.size(); i++)
 //    {
 //        qDebug() << " i is " << i;
@@ -463,9 +456,9 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
 //            xDateTime.setTime_t(xDivided.at(k));
 //            qDebug() << xDateTime;
 //        }
-//        color = myColors[i%6];
 //        ui->plotView->graph()->setPen(QPen(color));
 //        ui->plotView->graph()->setData(xPlot, yPlot);
+
         ui->plotView->graph()->setData(x,value);
         ui->plotView->replot();
 
@@ -1082,7 +1075,7 @@ void MainWindow::on_actionPlotPDF_triggered()
     if (ret == QDialog::Accepted)
     {
         QStringList fileName = fileDialog.selectedFiles();
-        ui->plotView->savePdf(fileName[0], false, 3508, 2480);
+        ui->plotView->savePdf(fileName[0]/*, false, 3508, 2480*/);
     }
 }
 
@@ -1159,7 +1152,7 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
     QPrinter printer;
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setPrintRange(QPrinter::AllPages);
-    printer.setOrientation(QPrinter::Portrait);
+    printer.setOrientation(QPrinter::Landscape);
     printer.setPaperSize(QPrinter::Letter);
     printer.setResolution(QPrinter::HighResolution);
     printer.setFullPage(false);
@@ -1182,7 +1175,6 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
     }
     delete renderer;
 }
-
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
 {
