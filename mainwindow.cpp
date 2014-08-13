@@ -34,7 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
     MinTemp(false),
     MaxTemp(false),
     MinRH(false),
-    MaxRH(false)
+    MaxRH(false),
+    isCursorCloseToGraph(false)
 {
     ui->setupUi(this);
     ui->mainToolBar->setMinimumHeight(32);
@@ -43,7 +44,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionSettings->setVisible(false);
     ui->actionOpenAnotherWindow->setVisible(false);
     ui->actionPDF->setVisible(false);
-
 
 
 
@@ -153,8 +153,6 @@ void MainWindow::on_actionSettings_triggered()
 void MainWindow::on_openButton_clicked()
 {
     filePath = ui->filePathline->text();
-    qDebug() << filePath.endsWith(".csv");
-
     if (!filePath.isEmpty())
     {
         if(!filePath.endsWith(".csv") || !filePath.contains("_summaryFile"))
@@ -441,8 +439,6 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     ui->plotView->yAxis->setRange(value.first(),value.last());
     ui->plotView->yAxis->rescale(true);
 
-    this->addTracer(ui->plotView->graph());
-
     // plotting continuous segments
 //    QVector<double> xDivided;
 //    QVector<double> yDivided;
@@ -509,7 +505,14 @@ bool MainWindow::removeGraphByName(QString name)
 void MainWindow::menuRequest(QPoint pos)
 {
     QMenu * menu = new QMenu(this);
-    QMenu * addSubMenu = menu->addMenu("&Add");
+    if(isCursorCloseToGraph)
+    {
+        QMenu * commentMenu = menu->addMenu("&Notes");
+        actionAddComment = commentMenu->addAction("&Add Notes");
+        actionRemoveComment = commentMenu->addAction("&Remove Notes");
+    }
+
+    QMenu * addSubMenu = menu->addMenu("&Add Graphs");
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
     actionREAdd = addSubMenu->addAction( "RE");
@@ -533,11 +536,7 @@ void MainWindow::menuRequest(QPoint pos)
 
     if (ui->plotView->graphCount() > 0 )
     {
-        QMenu * commentMenu = menu->addMenu("&Notes");
-        actionAddComment = commentMenu->addAction("&Add Notes");
-        actionRemoveComment = commentMenu->addAction("&Remove Notes");
-
-        QMenu * removeMenu = menu->addMenu("&Remove");
+        QMenu * removeMenu = menu->addMenu("&Remove Graphs");
         menu->addAction( "Remove All &Graphs", this, SLOT(removeAllGraphs()));
 
         actionRERemove = removeMenu->addAction( "RE");
@@ -589,6 +588,7 @@ bool MainWindow::removeGraphByAction(QAction * action)
 void MainWindow::actionMapper(QString action, bool checked )
 {
     QString triggeredAction = action;
+    if (triggeredAction == "&Add Notes") actionMapper(actionAddComment);
     if (triggeredAction == "RE" && checked) actionMapper(actionREAdd);
     else if(triggeredAction == "RE" && !checked)
     {
@@ -641,8 +641,12 @@ void MainWindow::actionMapper(QString action, bool checked )
 
 void MainWindow::actionMapper(QAction * action)
 {
+    // add comments/tracers
+    if (action == actionAddComment)
+    {
+        this->addCommentTracer(ui->plotView->graph(), mappedXAxisPosition);
+    }
     // add a graph
-
     ui->statusBar->showMessage("Loading the graph...");
     if (action == actionREAdd )
     {
@@ -1003,18 +1007,20 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 
         // getting the selected graph coordinates and showing it in a tooltip
         QToolTip::hideText();
+        isCursorCloseToGraph = false;
         if( !ui->plotView->selectedGraphs().isEmpty())
         {
             double distance = ui->plotView->selectedGraphs().first()->selectTest(mouseEvent->posF(),true);
             if( distance < 10 && distance > 0)
             {
-                double x = ui->plotView->selectedGraphs().first()->keyAxis()->pixelToCoord(mouseEvent->posF().x());
+                isCursorCloseToGraph = true;
+                double xAxisValue = ui->plotView->selectedGraphs().first()->keyAxis()->pixelToCoord(mouseEvent->posF().x());
                 QDateTime xDateTime;
-                xDateTime.setTime_t(x);
+                xDateTime.setTime_t(xAxisValue);
                 double y = ui->plotView->selectedGraphs().first()->valueAxis()->pixelToCoord(mouseEvent->posF().y());
 
+                mappedXAxisPosition = dataPointMap(xAxisValue);
                 QString selectedGraph = ui->plotView->selectedGraphs().first()->name();
-
                 // showing the tooltip
                 QToolTip::showText(mouseEvent->globalPos(),
                                    tr("<table>"
@@ -1184,28 +1190,37 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
     delete renderer;
 }
 
-void MainWindow::addTracer(QCPGraph * selectedGraph)
+void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
 {
-    QCPItemTracer *phaseTracer = new QCPItemTracer(ui->plotView);
-    ui->plotView->addItem(phaseTracer);
+    QCPItemTracer *commentTracer = new QCPItemTracer(ui->plotView);
+    ui->plotView->addItem(commentTracer);
     //itemDemoPhaseTracer = phaseTracer; // so we can access it later in the bracketDataSlot for animation
-    phaseTracer->setGraph(selectedGraph);
-    phaseTracer->setGraphKey((x.at(100)));
-    phaseTracer->setInterpolating(true);
-    phaseTracer->setStyle(QCPItemTracer::tsCircle);
-    phaseTracer->setPen(QPen(Qt::black));
-    phaseTracer->setBrush(Qt::black);
-    phaseTracer->setSize(7);
+    commentTracer->setGraph(selectedGraph);
+    commentTracer->setGraphKey(position);
+    commentTracer->setInterpolating(true);
+    commentTracer->setStyle(QCPItemTracer::tsCircle);
+    commentTracer->setPen(QPen(QColor(199,97,20)));
+    commentTracer->setBrush(QColor(199,97,20,180));
+    commentTracer->setSize(10);
+}
 
-//    if(ui->customPlot->selectedGraphs().count() != 0)
-//    {
-//        const QCPDataMap *dataMap = ui->customPlot->selectedGraphs().first()->data();
-//        QMap<double, QCPData>::const_iterator i = dataMap->constBegin();
-//        while (i != dataMap->constEnd()) {
-//            qDebug() << i.key()<< ": " << i.value().key << ": " << i.value().value << endl;
-//            ++i;
-//        }
-//    }
+double MainWindow::dataPointMap(double point)
+{
+    double position = 0.0;
+    if(ui->plotView->selectedGraphs().count() > 0)
+    {
+        const QCPDataMap *dataMap = ui->plotView->selectedGraphs().first()->data();
+        QMap<double, QCPData>::const_iterator i = dataMap->lowerBound(point);
+        if((i.key() - point) < (point - (i-1).key()))
+        {
+            position = i.key();
+        }
+        else
+        {
+            position = (i-1).key();
+        }
+    }
+    return position;
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)

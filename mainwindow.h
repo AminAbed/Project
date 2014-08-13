@@ -30,7 +30,8 @@ public:
     void toggleMenu();
     void restoreWindowState();
     void saveWindowState();
-    void addTracer(QCPGraph * );
+    void addCommentTracer(QCPGraph * , double );
+    double dataPointMap(double );
 
 private:
     Ui::MainWindow *ui;
@@ -61,6 +62,9 @@ private:
     // universal x-axis (timestamps)
     QVector<double> x;
     QList<int> indexes;
+
+    double mappedXAxisPosition;
+    bool isCursorCloseToGraph;
 
     // context menu actions
     QAction* actionREAdd;
