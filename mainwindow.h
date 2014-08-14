@@ -31,6 +31,7 @@ public:
     void restoreWindowState();
     void saveWindowState();
     void addCommentTracer(QCPGraph * , double );
+    void setupCommentWindow();
     double dataPointMap(double );
 
 private:

@@ -18,8 +18,8 @@
 #include <QToolButton>
 #include <QSignalMapper>
 #include <QtWebKit/QWebView>
-#include <QTextStream>
 #include <QResource>
+#include "CommentWindow.h"
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
@@ -645,6 +645,7 @@ void MainWindow::actionMapper(QAction * action)
     if (action == actionAddComment)
     {
         this->addCommentTracer(ui->plotView->graph(), mappedXAxisPosition);
+        this->setupCommentWindow();
     }
     // add a graph
     ui->statusBar->showMessage("Loading the graph...");
@@ -1202,6 +1203,15 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
     commentTracer->setPen(QPen(QColor(199,97,20)));
     commentTracer->setBrush(QColor(199,97,20,180));
     commentTracer->setSize(10);
+}
+
+void MainWindow::setupCommentWindow()
+{
+    CommentWindow * commentWindow = new CommentWindow;
+    commentWindow->show();
+    //QTextEdit * commentArea = new QTextEdit;
+    //commentArea->show();
+
 }
 
 double MainWindow::dataPointMap(double point)
