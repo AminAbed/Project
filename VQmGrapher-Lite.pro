@@ -17,17 +17,20 @@ SOURCES += main.cpp\
     PatientInfo.cpp \
     MainWindow.cpp \
     QCustomPlot.cpp \
-    SettingsPage.cpp
+    SettingsPage.cpp \
+    CommentWindow.cpp
 
 HEADERS  += \
     CustomLineEdit.h \
     PatientInfo.h \
     MainWindow.h \
     QCustomPlot.h \
-    SettingsPage.h
+    SettingsPage.h \
+    CommentWindow.h
 
 FORMS    += mainwindow.ui \
-    SettingsPage.ui
+    SettingsPage.ui \
+    CommentWindow.ui
 
 RESOURCES += \
     images.qrc \
