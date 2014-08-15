@@ -14,9 +14,16 @@ class CommentWindow : public QDialog
 public:
     explicit CommentWindow(QWidget *parent = 0);
     ~CommentWindow();
-    
+
+private slots:
+    void on_submitButton_clicked();
+    void on_cancelButton_clicked();
+
 private:
     Ui::CommentWindow *ui;
+
+signals:
+    void commentSubmitted(QString );
 };
 
 #endif // COMMENTWINDOW_H
