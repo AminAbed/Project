@@ -9,6 +9,7 @@
 #include <QtWebKit/QWebView>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
+#include "CommentWindow.h"
 
 
 typedef QList <double> DoublesList;
@@ -33,6 +34,8 @@ public:
     void addCommentTracer(QCPGraph * , double );
     void setupCommentWindow();
     double dataPointMap(double );
+    void publishComments(QString ,double );
+    int findCommentTracer(double );
 
 private:
     Ui::MainWindow *ui;
@@ -63,6 +66,7 @@ private:
     // universal x-axis (timestamps)
     QVector<double> x;
     QList<int> indexes;
+    QMap<double, int> tracerList;
 
     double mappedXAxisPosition;
     bool isCursorCloseToGraph;
@@ -91,6 +95,9 @@ private:
     SettingsPage  settingsPage;
     QString summaryFileName;
     QString filePath;
+
+    // pointer to comment window
+    CommentWindow * commentWindow;
 
 
 protected:
@@ -138,6 +145,7 @@ public slots:
 private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
     void on_cancelButton_clicked();
+    void commentSubmitted(QString );
 
 signals:
     void toggleCheckBox(QString ,bool );

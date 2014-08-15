@@ -268,12 +268,12 @@
            </column>
            <column>
             <property name="text">
-             <string>Inhaled Enthalpy</string>
+             <string>Max RH</string>
             </property>
            </column>
            <column>
             <property name="text">
-             <string> Inhaled Enthalpy</string>
+             <string>Inhaled Enthalpy</string>
             </property>
            </column>
            <column>
@@ -289,6 +289,11 @@
            <column>
             <property name="text">
              <string>Max O2</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Notes</string>
             </property>
            </column>
           </widget>

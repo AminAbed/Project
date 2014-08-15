@@ -23,7 +23,7 @@
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
-#define COLUMN_COUNT 14
+#define COLUMN_COUNT 15
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -125,6 +125,9 @@ void MainWindow::on_actionOpen_triggered()
 
     ui->plotView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->plotView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(menuRequest(QPoint)));
+
+    commentWindow = new CommentWindow;
+    connect(commentWindow, SIGNAL(commentSubmitted(QString )), this, SLOT(commentSubmitted(QString )));
 
     ui->filePathline->clear();
 }
@@ -848,7 +851,7 @@ void MainWindow::populateTable()
         text = timeStamp[row];
         ui->tableWidget->setItem(row,0,new QTableWidgetItem(text));
         // populate the readings
-        for (int col=1; col< ui->tableWidget->columnCount(); col++)
+        for (int col=1; col< ui->tableWidget->columnCount()-1; col++)
         {
             reading = readings[col-1].at(row);
             ui->tableWidget->setItem(row,col,new QTableWidgetItem(QString::number(reading)));
@@ -857,6 +860,7 @@ void MainWindow::populateTable()
     // resize column and row to content
     ui->tableWidget->resizeRowsToContents();
     ui->tableWidget->resizeColumnsToContents();
+    ui->tableWidget->setColumnWidth(COLUMN_COUNT-1, 250);
 }
 
 void MainWindow::horzScrollBarChanged(int value)
@@ -1021,6 +1025,10 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
                 double y = ui->plotView->selectedGraphs().first()->valueAxis()->pixelToCoord(mouseEvent->posF().y());
 
                 mappedXAxisPosition = dataPointMap(xAxisValue);
+                int commentIndex = this->findCommentTracer(mappedXAxisPosition);
+                QString comment = "";
+                if(commentIndex >= 0)  comment = ui->tableWidget->item(commentIndex, COLUMN_COUNT-1)->text();
+                else comment = "N/A";
                 QString selectedGraph = ui->plotView->selectedGraphs().first()->name();
                 // showing the tooltip
                 QToolTip::showText(mouseEvent->globalPos(),
@@ -1031,10 +1039,14 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
                                       "<tr>"
                                       "<td>%L2:</td>" "<td>%L3</td>"
                                       "</tr>"
+                                      "<tr>"
+                                      "<td>Notes:</td>" "<td>%L4</td>"
+                                      "</tr>"
                                       "</table>").
                                    arg(xDateTime.toString()).
                                    arg(selectedGraph).
-                                   arg(y),
+                                   arg(y).
+                                   arg(comment),
                                    ui->plotView, ui->plotView->rect());
             }
         }
@@ -1101,6 +1113,7 @@ void MainWindow::on_actionTablePDF_triggered()
     this->saveHTMLToPDF(htmlRenderer);
 }
 
+// converts the table to HTML
 QString tableWidgetToHTML( QTableWidget * table )
 {
     QString html;
@@ -1138,10 +1151,9 @@ QString tableWidgetToHTML( QTableWidget * table )
     return html;
 }
 
+// loads and fills the HTML tmeplate with content
 QString MainWindow::generateHTML()
 {
-
-
     QString html ( (char*) QResource(":/export-template.html").data() );
     html = html
             .arg( ui->patientInfoLabel->text() )
@@ -1158,12 +1170,13 @@ QString MainWindow::generateHTML()
     return html;
 }
 
-
+// saves the html(table) to PDF
 void MainWindow::saveHTMLToPDF(QWebView * renderer)
 {
     QWebView *htmlRenderer = renderer;
     if ( htmlRenderer == NULL) return;
 
+    // sets up the printer
     QPrinter printer;
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setPrintRange(QPrinter::AllPages);
@@ -1174,6 +1187,7 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
     printer.setNumCopies(1);
     printer.setOutputFileName(filePath + "_table.pdf");
 
+    // sets up the dialog box
     QFileDialog fileDialog;
     fileDialog.setOptions(QFileDialog::DontUseNativeDialog);
     fileDialog.setFileMode(QFileDialog::AnyFile);
@@ -1191,11 +1205,11 @@ void MainWindow::saveHTMLToPDF(QWebView * renderer)
     delete renderer;
 }
 
+// adds a tracer/marker to the graph for comments
 void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
 {
     QCPItemTracer *commentTracer = new QCPItemTracer(ui->plotView);
     ui->plotView->addItem(commentTracer);
-    //itemDemoPhaseTracer = phaseTracer; // so we can access it later in the bracketDataSlot for animation
     commentTracer->setGraph(selectedGraph);
     commentTracer->setGraphKey(position);
     commentTracer->setInterpolating(true);
@@ -1203,17 +1217,24 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
     commentTracer->setPen(QPen(QColor(199,97,20)));
     commentTracer->setBrush(QColor(199,97,20,180));
     commentTracer->setSize(10);
+
+    tracerList[position] = x.indexOf(position);
+    QMap<double, int>::const_iterator i = tracerList.constBegin();
+    while (i != tracerList.constEnd()) {
+        qDebug() << i.key() << ": " << i.value() << endl;
+         ++i;
+     }
+
 }
 
+// sets up the comment area
 void MainWindow::setupCommentWindow()
 {
-    CommentWindow * commentWindow = new CommentWindow;
+    commentWindow->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     commentWindow->show();
-    //QTextEdit * commentArea = new QTextEdit;
-    //commentArea->show();
-
 }
 
+// finds and returns the closest actual data point to where the curser is
 double MainWindow::dataPointMap(double point)
 {
     double position = 0.0;
@@ -1231,6 +1252,25 @@ double MainWindow::dataPointMap(double point)
         }
     }
     return position;
+}
+
+void MainWindow::commentSubmitted(QString comment)
+{
+    publishComments(comment, mappedXAxisPosition);
+}
+
+void MainWindow::publishComments(QString comment, double position)
+{
+    int index = x.indexOf(position);
+    QTableWidgetItem * item = new QTableWidgetItem(tr("%1").arg(comment));
+    ui->tableWidget->setItem(index,COLUMN_COUNT-1,item);
+    ui->tableWidget->item(index, COLUMN_COUNT-1)->setToolTip(comment);
+}
+
+int MainWindow::findCommentTracer(double point)
+{
+    int index = tracerList.value(point, -1);
+    return index;
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
