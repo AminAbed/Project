@@ -14,13 +14,17 @@ class CommentWindow : public QDialog
 public:
     explicit CommentWindow(QWidget *parent = 0);
     ~CommentWindow();
+    static CommentWindow & getInstance();
 
 private slots:
-    void on_submitButton_clicked();
+    void on_okButton_clicked();
     void on_cancelButton_clicked();
+    void toggleOkButton();
+    void setCommentText(QString );
 
 private:
     Ui::CommentWindow *ui;
+    /// Manages the singleton instance
 
 signals:
     void commentSubmitted(QString );
