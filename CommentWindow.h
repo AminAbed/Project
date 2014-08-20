@@ -28,6 +28,8 @@ private:
 
 signals:
     void commentSubmitted(QString );
+    void commentDeleted();
+    void cancelled();
 };
 
 #endif // COMMENTWINDOW_H

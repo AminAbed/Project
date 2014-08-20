@@ -23,7 +23,8 @@ CommentWindow::~CommentWindow()
 void CommentWindow::on_okButton_clicked()
 {
     QString comment = ui->commentSection->toPlainText();
-    emit commentSubmitted(comment);
+    if(comment.isEmpty()) emit commentDeleted();
+    else emit commentSubmitted(comment);
     ui->commentSection->clear();
     ui->okButton->setEnabled(false);
     this->close();
@@ -31,6 +32,7 @@ void CommentWindow::on_okButton_clicked()
 
 void CommentWindow::on_cancelButton_clicked()
 {
+    emit cancelled();
     ui->commentSection->clear();
     this->close();
 }
@@ -46,6 +48,7 @@ void CommentWindow::toggleOkButton()
 void CommentWindow::setCommentText(QString comment)
 {
     ui->commentSection->setPlainText(comment);
+    ui->okButton->setEnabled(false);
 }
 
 CommentWindow &CommentWindow::getInstance()
