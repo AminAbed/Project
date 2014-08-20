@@ -2572,7 +2572,7 @@ protected:
   virtual QCPRange getValueRange(bool &foundRange, SignDomain inSignDomain=sdBoth) const;
   virtual QCPRange getKeyRange(bool &foundRange, SignDomain inSignDomain, bool includeErrors) const; // overloads base class interface
   virtual QCPRange getValueRange(bool &foundRange, SignDomain inSignDomain, bool includeErrors) const; // overloads base class interface
-  
+
   // introduced virtual methods:
   virtual void drawFill(QCPPainter *painter, QVector<QPointF> *lineData) const;
   virtual void drawScatterPlot(QCPPainter *painter, QVector<QCPData> *scatterData) const;
