@@ -19,11 +19,13 @@
 #include <QSignalMapper>
 #include <QtWebKit/QWebView>
 #include <QResource>
+#include <QMultiMap>
 #include "CommentWindow.h"
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 
 #define COLUMN_COUNT 15
+#define NOTES_COLUMN 14
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -126,8 +128,11 @@ void MainWindow::on_actionOpen_triggered()
     ui->plotView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->plotView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(menuRequest(QPoint)));
 
-    commentWindow = new CommentWindow;
+    commentWindow = & CommentWindow::getInstance();
     connect(commentWindow, SIGNAL(commentSubmitted(QString )), this, SLOT(commentSubmitted(QString )));
+    connect(this, SIGNAL(hasComments(QString )), commentWindow, SLOT(setCommentText(QString )));
+    connect(commentWindow, SIGNAL(commentDeleted()), this, SLOT(commentDeleted()));
+    connect(commentWindow, SIGNAL(cancelled()), this, SLOT(cancelled()));
 
     ui->filePathline->clear();
 }
@@ -336,7 +341,7 @@ void MainWindow::setupGraph()
     ui->plotView->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
     ui->plotView->legend->setSelectableParts(QCPLegend::spItems);
     // graph interactions
-    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend);
+    ui->plotView->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables | QCP::iSelectAxes | QCP::iSelectLegend );
 
     // set a fixed tick-step to one tick per month:
 //      ui->plotView->xAxis->setTickLabelType(QCPAxis::ltDateTime);
@@ -511,8 +516,12 @@ void MainWindow::menuRequest(QPoint pos)
     if(isCursorCloseToGraph)
     {
         QMenu * commentMenu = menu->addMenu("&Notes");
-        actionAddComment = commentMenu->addAction("&Add Notes");
-        actionRemoveComment = commentMenu->addAction("&Remove Notes");
+        actionAddComment = commentMenu->addAction("&Add/Edit Notes");
+        if(tracerList.contains(mappedXAxisPosition) && tracerList[mappedXAxisPosition] == ui->plotView->selectedGraphs().first()->name())
+        {
+            actionRemoveComment = commentMenu->addAction("&Remove Notes");
+        }
+        qDebug() << "tracer index" << this->findCommentTracer(mappedXAxisPosition);
     }
 
     QMenu * addSubMenu = menu->addMenu("&Add Graphs");
@@ -591,7 +600,7 @@ bool MainWindow::removeGraphByAction(QAction * action)
 void MainWindow::actionMapper(QString action, bool checked )
 {
     QString triggeredAction = action;
-    if (triggeredAction == "&Add Notes") actionMapper(actionAddComment);
+    if (triggeredAction == "&Add/Edit Notes") actionMapper(actionAddComment);
     if (triggeredAction == "RE" && checked) actionMapper(actionREAdd);
     else if(triggeredAction == "RE" && !checked)
     {
@@ -646,9 +655,15 @@ void MainWindow::actionMapper(QAction * action)
 {
     // add comments/tracers
     if (action == actionAddComment)
+    { 
+        this->setupCommentWindow(ui->plotView->selectedGraphs().first()->name());
+    }
+
+    // remove tracer
+    if (action == actionRemoveComment)
     {
-        this->addCommentTracer(ui->plotView->graph(), mappedXAxisPosition);
-        this->setupCommentWindow();
+        this->removeCommentTracer(mousePosition);
+        this->removeComment(copyOfMappedValue);
     }
     // add a graph
     ui->statusBar->showMessage("Loading the graph...");
@@ -839,6 +854,7 @@ void MainWindow::toggleMenu()
 
 void MainWindow::populateTable()
 {
+    QSettings commentFile("../comments.ini", QSettings::IniFormat);
     int rowCount = timeStamp.size();
     ui->tableWidget->setRowCount(rowCount);
     ui->tableWidget->setColumnCount(COLUMN_COUNT);
@@ -853,14 +869,21 @@ void MainWindow::populateTable()
         // populate the readings
         for (int col=1; col< ui->tableWidget->columnCount()-1; col++)
         {
+
             reading = readings[col-1].at(row);
             ui->tableWidget->setItem(row,col,new QTableWidgetItem(QString::number(reading)));
+        }
+
+        // inserting the comments
+        if(commentFile.value(QString::number(row),"-1") != "-1")
+        {
+            ui->tableWidget->setItem(row,NOTES_COLUMN,new QTableWidgetItem(commentFile.value(QString::number(row)).toString()));
         }
     }
     // resize column and row to content
     ui->tableWidget->resizeRowsToContents();
     ui->tableWidget->resizeColumnsToContents();
-    ui->tableWidget->setColumnWidth(COLUMN_COUNT-1, 250);
+    ui->tableWidget->setColumnWidth(NOTES_COLUMN, 250);
 }
 
 void MainWindow::horzScrollBarChanged(int value)
@@ -1018,6 +1041,8 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
             double distance = ui->plotView->selectedGraphs().first()->selectTest(mouseEvent->posF(),true);
             if( distance < 10 && distance > 0)
             {
+                mousePosition.setX(mouseEvent->posF().x());
+                mousePosition.setY(mouseEvent->posF().y());
                 isCursorCloseToGraph = true;
                 double xAxisValue = ui->plotView->selectedGraphs().first()->keyAxis()->pixelToCoord(mouseEvent->posF().x());
                 QDateTime xDateTime;
@@ -1026,9 +1051,13 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 
                 mappedXAxisPosition = dataPointMap(xAxisValue);
                 int commentIndex = this->findCommentTracer(mappedXAxisPosition);
+//                if(commentIndex>0) //&& !ui->tableWidget->item(commentIndex, NOTES_COLUMN)->text().isEmpty()*)
+//                qDebug() << ui->tableWidget->item(commentIndex, NOTES_COLUMN)->text();
                 QString comment = "";
-                if(commentIndex >= 0)  comment = ui->tableWidget->item(commentIndex, COLUMN_COUNT-1)->text();
+                if(commentIndex >= 0)
+                comment = ui->tableWidget->item(commentIndex, NOTES_COLUMN)->text();
                 else comment = "N/A";
+
                 QString selectedGraph = ui->plotView->selectedGraphs().first()->name();
                 // showing the tooltip
                 QToolTip::showText(mouseEvent->globalPos(),
@@ -1045,8 +1074,8 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
                                       "</table>").
                                    arg(xDateTime.toString()).
                                    arg(selectedGraph).
-                                   arg(y).
-                                   arg(comment),
+                                   arg(y)
+                                  .arg(comment),
                                    ui->plotView, ui->plotView->rect());
             }
         }
@@ -1218,20 +1247,54 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
     commentTracer->setBrush(QColor(199,97,20,180));
     commentTracer->setSize(10);
 
-    tracerList[position] = x.indexOf(position);
-    QMap<double, int>::const_iterator i = tracerList.constBegin();
-    while (i != tracerList.constEnd()) {
-        qDebug() << i.key() << ": " << i.value() << endl;
-         ++i;
-     }
+    tracerList[position] = selectedGraph->name();
+//    QMap<double, int>::const_iterator i = tracerList.constBegin();
+//    while (i != tracerList.constEnd()) {
+//        qDebug() << i.key() << ": " << i.value() << endl;
+//         ++i;
+//     }
 
 }
 
-// sets up the comment area
-void MainWindow::setupCommentWindow()
+void MainWindow::removeCommentTracer(QPoint position)
 {
+    ui->plotView->removeItem(ui->plotView->itemAt(position));
+}
+
+void MainWindow::removeComment(double position)
+{
+    QSettings commentFile("../comments.ini", QSettings::IniFormat);
+
+    int index = x.indexOf(position);
+    ui->tableWidget->setItem(index, NOTES_COLUMN, new QTableWidgetItem(""));
+    qDebug() << "items removed from tracer list: " << tracerList.remove(position);
+    commentFile.remove(QString::number(index));
+}
+
+// sets up the comment area
+void MainWindow::setupCommentWindow(QString name)
+{
+//    commentWindow = & CommentWindow::getInstance();
+//    connect(commentWindow, SIGNAL(commentSubmitted(QString )), this, SLOT(commentSubmitted(QString )));
+
+    copyOfMappedValue = mappedXAxisPosition;
     commentWindow->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     commentWindow->show();
+    QString comment = "";
+    //int row = tracerList.value(copyOfMappedValue, -1);
+    if(tracerList.contains(copyOfMappedValue))
+    {
+        comment = ui->tableWidget->item(x.indexOf(copyOfMappedValue), NOTES_COLUMN)->text();
+//        if(tracerList[copyOfMappedValue] != name)
+//        {
+//            comment += tr(" \n%1: ").arg(name);
+//        }
+    }
+//    else
+//    {
+//        comment = tr("%1: ").arg(name);
+//    }
+    emit hasComments(comment);
 }
 
 // finds and returns the closest actual data point to where the curser is
@@ -1256,21 +1319,67 @@ double MainWindow::dataPointMap(double point)
 
 void MainWindow::commentSubmitted(QString comment)
 {
-    publishComments(comment, mappedXAxisPosition);
+    this->addCommentTracer(ui->plotView->selectedGraphs().first(), copyOfMappedValue);
+    ui->plotView->replot();
+    publishComments(comment, copyOfMappedValue);
+
+//    commentWindow->deleteLater();
+
+//    emit finished();
+//    connect(this, SIGNAL(finished()), commentWindow, SLOT(deleteLater()));
+
 }
 
 void MainWindow::publishComments(QString comment, double position)
 {
     int index = x.indexOf(position);
+
+    QSettings commentFile("../comments.ini", QSettings::IniFormat);
+    commentFile.setValue(QString::number(index), comment );
+
     QTableWidgetItem * item = new QTableWidgetItem(tr("%1").arg(comment));
-    ui->tableWidget->setItem(index,COLUMN_COUNT-1,item);
-    ui->tableWidget->item(index, COLUMN_COUNT-1)->setToolTip(comment);
+    ui->tableWidget->setItem(index, NOTES_COLUMN,item);
+    ui->tableWidget->item(index, NOTES_COLUMN)->setToolTip(comment);
 }
 
+// finds the closest comment to the point
 int MainWindow::findCommentTracer(double point)
 {
-    int index = tracerList.value(point, -1);
+    if(!tracerList.contains(point))
+    {
+        return -1;
+    }
+    int index = x.indexOf(point);
+    QMap<double, QString>::const_iterator i = tracerList.constBegin();
+    while (i != tracerList.constEnd()) {
+        qDebug() << i.key() << ": " << i.value() << endl;
+         ++i;
+    }
     return index;
+}
+
+// removes the comment tracer and comment when the deleted comment is okayed
+void MainWindow::commentDeleted()
+{
+    this->removeCommentTracer(mousePosition);
+    this->removeComment(copyOfMappedValue);
+}
+
+// redraws the comment tracer after canceling edit/delete
+void MainWindow::cancelled()
+{
+    this->addCommentTracer(ui->plotView->selectedGraphs().first(), copyOfMappedValue);
+    ui->plotView->replot();
+}
+
+void MainWindow::hideComments()
+{
+
+}
+
+void MainWindow::showComments()
+{
+
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)

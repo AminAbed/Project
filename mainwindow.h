@@ -32,7 +32,9 @@ public:
     void restoreWindowState();
     void saveWindowState();
     void addCommentTracer(QCPGraph * , double );
-    void setupCommentWindow();
+    void removeCommentTracer(QPoint );
+    void removeComment(double );
+    void setupCommentWindow(QString );
     double dataPointMap(double );
     void publishComments(QString ,double );
     int findCommentTracer(double );
@@ -66,10 +68,12 @@ private:
     // universal x-axis (timestamps)
     QVector<double> x;
     QList<int> indexes;
-    QMap<double, int> tracerList;
+    QMap<double, QString> tracerList;
 
     double mappedXAxisPosition;
+    double copyOfMappedValue;
     bool isCursorCloseToGraph;
+    QPoint mousePosition;
 
     // context menu actions
     QAction* actionREAdd;
@@ -130,6 +134,9 @@ public slots:
     QString generateHTML();
     void saveHTMLToPDF(QWebView * );
 
+    void hideComments();
+    void showComments();
+
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);
     void yAxisLimit(QCPRange newRange);
@@ -146,9 +153,13 @@ private slots:
     void updateFilePathLine(const QItemSelection &, const QItemSelection &);
     void on_cancelButton_clicked();
     void commentSubmitted(QString );
+    void commentDeleted();
+    void cancelled();
 
 signals:
     void toggleCheckBox(QString ,bool );
+    void hasComments(QString );
+    void finished();
 };
 
 #endif // MAINWINDOW_H
