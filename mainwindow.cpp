@@ -789,8 +789,9 @@ void MainWindow::actionMapper(QAction * action)
                 this->hideCommentTracers(ui->plotView->graph(i));
         }
         // disable the checkbox
-        if(ui->plotView->selectedGraphs().first()->name() == "RE")
-            tracerCheckBox->setDisabled(true);
+        if(!ui->plotView->selectedGraphs().isEmpty())
+            if(ui->plotView->selectedGraphs().first()->name() == "O2")
+                tracerCheckBox->setDisabled(true);
         // remove graph
         this->removeGraphByAction(action);
     //    emit toggleCheckBox(actionName, false);
@@ -1560,7 +1561,7 @@ void MainWindow::hideCommentTracers(QCPGraph * selectedGraph)
         itemTracerPtrList = reItemTracerPtrList;
  //       reTracersShown = false;
     }
-
+    if (itemTracerPtrList.isEmpty()) return;
     for(int i = 0; i < itemTracerPtrList.count(); i++)
     {
 //        qDebug() << commentTracerList[i].name;
