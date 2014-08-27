@@ -26,7 +26,8 @@ HEADERS  += \
     MainWindow.h \
     QCustomPlot.h \
     SettingsPage.h \
-    CommentWindow.h
+    CommentWindow.h \
+    CommentTracer.h
 
 FORMS    += mainwindow.ui \
     SettingsPage.ui \
