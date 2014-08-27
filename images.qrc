@@ -3,5 +3,6 @@
         <file>images/open.jpg</file>
         <file>images/settings.jpg</file>
         <file>images/pdf.jpg</file>
+        <file>images/reset.jpg</file>
     </qresource>
 </RCC>
