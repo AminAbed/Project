@@ -19,10 +19,11 @@
 #include <QSignalMapper>
 #include <QtWebKit/QWebView>
 #include <QResource>
-#include <QMultiMap>
+#include <QCheckBox>
 #include "CommentWindow.h"
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
+#include "CommentTracer.h"
 
 #define COLUMN_COUNT 15
 #define NOTES_COLUMN 14
@@ -40,12 +41,17 @@ MainWindow::MainWindow(QWidget *parent) :
     isCursorCloseToGraph(false)
 {
     ui->setupUi(this);
+
     ui->mainToolBar->setMinimumHeight(32);
+//    ui->mainToolBar->setMaximumWidth(300);
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ui->pageControl->setCurrentWidget(ui->startPage);
     ui->actionSettings->setVisible(false);
     ui->actionOpenAnotherWindow->setVisible(false);
     ui->actionPDF->setVisible(false);
+    ui->actionRescale->setVisible(false);
+
+    this->nextTracerIndex = 0;
 
 
 
@@ -64,7 +70,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QList<int> sizes;
     sizes << 250 << 100;
     ui->splitter->setSizes(sizes);
-
 }
 
 
@@ -296,13 +301,19 @@ int MainWindow::readSession(QString filePath)
     this->populateTable();
 
     ui->pageControl->setCurrentWidget(ui->plotPage);
+    this->loadCommentTracerDB();
+    qDebug() << "commentTracerList.count()" << commentTracerList.count();
+
+
+
 
     ui->actionOpen->setEnabled(true);
     ui->actionOpen->setVisible(false);
     ui->actionOpenAnotherWindow->setVisible(true);
 //    ui->actionPDF->setVisible(true);
-    ui->actionSettings->setVisible(true);
+    ui->actionSettings->setVisible(false);
 
+    ui->actionRescale->setVisible(true);
     // create a context menue in toolbar
     QMenu *menu = new QMenu();
     QAction * plotPDF = new QAction("Plot to PDF", this);
@@ -320,6 +331,32 @@ int MainWindow::readSession(QString filePath)
     ui->mainToolBar->addWidget(pdfButton);
     connect(plotPDF, SIGNAL(triggered()), this, SLOT(on_actionPlotPDF_triggered()));
     connect(tablePDF, SIGNAL(triggered()),this, SLOT(on_actionTablePDF_triggered()));
+
+
+    // spacer between PDF button and next buttons
+    QWidget* empty = new QWidget();
+    empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    ui->mainToolBar->addWidget(empty);
+
+    tracerCheckBox = new QCheckBox(ui->mainToolBar);
+    ui->mainToolBar->addWidget(tracerCheckBox);
+    tracerCheckBox->setText("Hide Comment Indicators");
+    tracerCheckBox->setToolTip("Show/hide comment indicators");
+    connect(tracerCheckBox, SIGNAL(toggled(bool)), this, SLOT(on_hideCommentTracer_toggled(bool)));
+    // make the checkbox disabled
+    tracerCheckBox->setEnabled(false);
+
+    // plot default graphs
+    plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
+    plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
+    RE = O2 = true;
+
+    // add comment tracers (if applicable)
+    for(int i = 0; i < ui->plotView->graphCount(); i++)
+    {
+        if(ui->plotView->graph(i)->name() == "RE" || ui->plotView->graph(i)->name() == "O2")
+            this->showCommentTracers(ui->plotView->graph(i));
+    }
 
     return 0;
 }
@@ -515,13 +552,17 @@ void MainWindow::menuRequest(QPoint pos)
     QMenu * menu = new QMenu(this);
     if(isCursorCloseToGraph)
     {
-        QMenu * commentMenu = menu->addMenu("&Notes");
-        actionAddComment = commentMenu->addAction("&Add/Edit Notes");
-        if(tracerList.contains(mappedXAxisPosition) && tracerList[mappedXAxisPosition] == ui->plotView->selectedGraphs().first()->name())
+        QString selectedGraph = ui->plotView->selectedGraphs().first()->name();
+        if(selectedGraph == "RE" || selectedGraph == "O2")
         {
-            actionRemoveComment = commentMenu->addAction("&Remove Notes");
+            QMenu * commentMenu = menu->addMenu("&Notes");
+            actionAddComment = commentMenu->addAction("&Add/Edit Notes");
+            if(tracerList.contains(mappedXAxisPosition) && tracerList[mappedXAxisPosition] == ui->plotView->selectedGraphs().first()->name())
+            {
+                actionRemoveComment = commentMenu->addAction("&Remove Notes");
+            }
+            qDebug() << "tracer index" << this->findCommentTracer(mappedXAxisPosition);
         }
-        qDebug() << "tracer index" << this->findCommentTracer(mappedXAxisPosition);
     }
 
     QMenu * addSubMenu = menu->addMenu("&Add Graphs");
@@ -659,17 +700,19 @@ void MainWindow::actionMapper(QAction * action)
         this->setupCommentWindow(ui->plotView->selectedGraphs().first()->name());
     }
 
-    // remove tracer
+    // remove comment and comment tracer
     if (action == actionRemoveComment)
     {
+  //      this->hideComments();
         this->removeCommentTracer(mousePosition);
-        this->removeComment(copyOfMappedValue);
+        this->removeComment(mappedXAxisPosition);
     }
     // add a graph
     ui->statusBar->showMessage("Loading the graph...");
     if (action == actionREAdd )
     {
         plot(MainWindow::respiratoryEnthalpy, Qt::red, "RE");
+        this->showCommentTracers(ui->plotView->graph());
     //    emit toggleCheckBox(action->text(), true);
         RE = true;
 
@@ -683,6 +726,7 @@ void MainWindow::actionMapper(QAction * action)
     else if (action == actionO2Add)
     {
         plot(MainWindow::O2Consumption, Qt::darkCyan, "O2");
+        this->showCommentTracers(ui->plotView->graph());
   //      emit toggleCheckBox(actionName, true);
         O2 = true;
     }
@@ -714,6 +758,18 @@ void MainWindow::actionMapper(QAction * action)
     // remove a graph
     if (action == actionRERemove )
     {
+        // hide tracers
+        for (int i=0; i < ui->plotView->graphCount(); ++i)
+        {
+            if(ui->plotView->graph(i)->name() == "RE")
+                this->hideCommentTracers(ui->plotView->graph(i));
+        }
+        // disable checkbox
+        if(!ui->plotView->selectedGraphs().isEmpty())
+            if(ui->plotView->selectedGraphs().first()->name() == "RE")
+                tracerCheckBox->setDisabled(true);
+
+        // remove graph
         this->removeGraphByAction(action);
  //       emit toggleCheckBox(action->text(), false);
         RE = false;
@@ -726,6 +782,16 @@ void MainWindow::actionMapper(QAction * action)
     }
     else if (action == actionO2Remove)
     {
+        // hide tracers
+        for (int i=0; i < ui->plotView->graphCount(); ++i)
+        {
+            if(ui->plotView->graph(i)->name() == "O2")
+                this->hideCommentTracers(ui->plotView->graph(i));
+        }
+        // disable the checkbox
+        if(ui->plotView->selectedGraphs().first()->name() == "RE")
+            tracerCheckBox->setDisabled(true);
+        // remove graph
         this->removeGraphByAction(action);
     //    emit toggleCheckBox(actionName, false);
         O2 = false;
@@ -1085,6 +1151,17 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 
 void MainWindow::selectionChanged()
 {
+  // toggle TracerCheckBox
+    if(!ui->plotView->selectedGraphs().isEmpty() && (ui->plotView->selectedGraphs().first()->name() == "O2" || ui->plotView->selectedGraphs().first()->name() == "RE"))
+    {
+        for(int i = 0; i < commentTracerList.count(); i++)
+        {
+            if(commentTracerList.at(i).name == ui->plotView->selectedGraphs().first()->name())
+                tracerCheckBox->setEnabled(true);
+        }
+    }
+    else tracerCheckBox->setEnabled(false);
+
   // handle axis and tick labels as one selectable object:
   if (ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis->selectedParts().testFlag(QCPAxis::spTickLabels) /*||
       ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spAxis) || ui->plotView->yAxis2->selectedParts().testFlag(QCPAxis::spTickLabels)*/)
@@ -1240,12 +1317,16 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
     QCPItemTracer *commentTracer = new QCPItemTracer(ui->plotView);
     ui->plotView->addItem(commentTracer);
     commentTracer->setGraph(selectedGraph);
+  //         qDebug() << "name is" <<commentTracer->graph()->name();
     commentTracer->setGraphKey(position);
     commentTracer->setInterpolating(true);
     commentTracer->setStyle(QCPItemTracer::tsCircle);
     commentTracer->setPen(QPen(QColor(199,97,20)));
     commentTracer->setBrush(QColor(199,97,20,180));
     commentTracer->setSize(10);
+
+    if(selectedGraph->name()== "O2") O2ItemTracerPtrList.append(commentTracer);
+    else reItemTracerPtrList.append(commentTracer);
 
     tracerList[position] = selectedGraph->name();
 //    QMap<double, int>::const_iterator i = tracerList.constBegin();
@@ -1256,19 +1337,48 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
 
 }
 
-void MainWindow::removeCommentTracer(QPoint position)
+void MainWindow::removeCommentTracer(QPoint mouePosition)
 {
-    ui->plotView->removeItem(ui->plotView->itemAt(position));
+    ui->plotView->removeItem(ui->plotView->itemAt(mouePosition));
+//    for(int i = 0; i < commentTracerList.count(); i++)
+//    {
+//        if ( commentTracerList.at(i) == ui->plotView->itemAt(mouePosition) )
+//        {
+
+//            break;
+//        }
+//    }
 }
 
 void MainWindow::removeComment(double position)
 {
     QSettings commentFile("../comments.ini", QSettings::IniFormat);
-
+    qDebug() << position;
     int index = x.indexOf(position);
+    qDebug() << "index to be romved is: "<< index;
+
+    // remove from table
     ui->tableWidget->setItem(index, NOTES_COLUMN, new QTableWidgetItem(""));
-    qDebug() << "items removed from tracer list: " << tracerList.remove(position);
+    // remove from tracerList
+    tracerList.remove(position);
+    // remove from commentTracerList and update database file
+    for(int i = 0; i < commentTracerList.count(); i++)
+    {
+        if(commentTracerList[i].position == position)
+        {
+            commentTracerList.removeAt(i);
+
+            QSettings commentTracerDB("../commentTracerDB.ini", QSettings::IniFormat);
+            commentTracerDB.beginWriteArray("commentTracers");
+            commentTracerDB.setArrayIndex(i);
+                               commentTracerDB.remove("");
+            commentTracerDB.endArray();
+
+        }
+    }
+    // removing from commentFile
     commentFile.remove(QString::number(index));
+
 }
 
 // sets up the comment area
@@ -1323,6 +1433,20 @@ void MainWindow::commentSubmitted(QString comment)
     ui->plotView->replot();
     publishComments(comment, copyOfMappedValue);
 
+    // filling the properties of tracer
+    CommentTracer tracer;
+    tracer.index = this->nextTracerIndex;
+    tracer.name = ui->plotView->selectedGraphs().first()->name();
+    tracer.position = copyOfMappedValue;
+    tracer.comment = comment;
+    commentTracerList.append(tracer);
+
+    // saving the tracer object to db
+    this->saveCommentTracerDB(&tracer);
+
+    // make the tracerCheckBox active
+    tracerCheckBox->setEnabled(true);
+
 //    commentWindow->deleteLater();
 
 //    emit finished();
@@ -1350,11 +1474,11 @@ int MainWindow::findCommentTracer(double point)
         return -1;
     }
     int index = x.indexOf(point);
-    QMap<double, QString>::const_iterator i = tracerList.constBegin();
-    while (i != tracerList.constEnd()) {
-        qDebug() << i.key() << ": " << i.value() << endl;
-         ++i;
-    }
+//    QMap<double, QString>::const_iterator i = tracerList.constBegin();
+//    while (i != tracerList.constEnd()) {
+//        qDebug() << i.key() << ": " << i.value() << endl;
+//         ++i;
+//    }
     return index;
 }
 
@@ -1372,14 +1496,143 @@ void MainWindow::cancelled()
     ui->plotView->replot();
 }
 
-void MainWindow::hideComments()
+bool MainWindow::saveCommentTracerDB(CommentTracer * commentTracer)
 {
+    qDebug() << "saveCommentTracerDB()";
+
+    int dbIndex = commentTracer->index;
+    int dbSize = commentTracerList.count();
+    // allocate a new index at the end of the db if needed
+    if (dbIndex == 0)
+    {
+        dbSize++;
+    }
+
+    QSettings commentTracerDB("../commentTracerDB.ini", QSettings::IniFormat);
+
+    commentTracerDB.beginWriteArray( "commentTracers"/*, dbSize */);
+        commentTracerDB.setArrayIndex( dbIndex );
+        commentTracerDB.setValue ( TRACER_INDEX,  commentTracer->index );
+        commentTracerDB.setValue ( PLOT_NAME,     commentTracer->name );
+        commentTracerDB.setValue ( PLOT_POSITION, commentTracer->position );
+        commentTracerDB.setValue ( PLOT_COMMENT,  commentTracer->comment);
+    commentTracerDB.endArray();
+
+    this->nextTracerIndex++;
+
+    return true;
+}
+
+void MainWindow::loadCommentTracerDB()
+{
+    qDebug() << "loadCommentTracerDB()";
+    this->commentTracerList.clear();
+
+        QSettings commentTracerDB("../commentTracerDB.ini", QSettings::IniFormat);
+        int numCommentTracers = commentTracerDB.beginReadArray("commentTracers");
+        for (int i = 0; i < numCommentTracers; ++i)
+        {
+            commentTracerDB.setArrayIndex(i);
+            // load into commentTracer structure
+            CommentTracer commentTracer;
+            commentTracer.index    = commentTracerDB.value(TRACER_INDEX   ,    i ).toInt();
+            commentTracer.name     = commentTracerDB.value(PLOT_NAME      ,   "" ).toString();
+            commentTracer.position = commentTracerDB.value(PLOT_POSITION  ,  0.0 ).toDouble();
+            commentTracer.comment  = commentTracerDB.value(PLOT_COMMENT   ,   "" ).toString();
+            this->commentTracerList.append(commentTracer);
+        }
+        commentTracerDB.endArray();
+        this->nextTracerIndex = numCommentTracers;
+}
+
+void MainWindow::hideCommentTracers(QCPGraph * selectedGraph)
+{
+    ItemTracerList itemTracerPtrList;
+    QString name = selectedGraph->name();
+
+    if (name == "O2")
+    {
+        itemTracerPtrList = O2ItemTracerPtrList;
+//        o2TracersShown = false;
+    }
+    else
+    {
+        itemTracerPtrList = reItemTracerPtrList;
+ //       reTracersShown = false;
+    }
+
+    for(int i = 0; i < itemTracerPtrList.count(); i++)
+    {
+//        qDebug() << commentTracerList[i].name;
+//        if(commentTracerList[i].name != name) continue;
+//        qDebug() << "removing..." << commentTracerList[i].index;
+//        ui->plotView->removeItem(0);
+
+        qDebug() << "itemTracerPtrList[i]->graph()->name()" << itemTracerPtrList[i]->graph()->name();
+        qDebug() << "itemTracerPtr count " << itemTracerPtrList.count();
+          //      if(itemTracerPtrList[i]->graph()->name() != name) continue;
+                ui->plotView->removeItem(itemTracerPtrList[i]);
+ //               itemsToBeRemoved.append(i);
+               // delete itemTracerPtrList[i];
+                //itemTracerPtrList.removeAt(i);
+
+                qDebug() << "itemTracerPtrList.count() within the loop" << itemTracerPtrList.count();
+
+    }
+    qDebug() << "itemTracerPtrList.count()" << itemTracerPtrList.count();
+    ui->plotView->replot();
+    itemTracerPtrList.clear();
+    if (name == "O2") O2ItemTracerPtrList = itemTracerPtrList;
+    else reItemTracerPtrList =  itemTracerPtrList;
+
+//    for(int i = 0; i < itemsToBeRemoved.count(); i++)
+//    {
+//        itemTracerPtrList.removeAt(i);
+//    }
+    qDebug() << "itemTracerPtrList.count() end of the loop" << itemTracerPtrList.count();
 
 }
 
-void MainWindow::showComments()
+void MainWindow::showCommentTracers(QCPGraph * selectedGraph)
 {
+    QString name = selectedGraph->name();
+    qDebug() << name;
+    if (name != "RE" && name != "O2")
+    {
+        qDebug() << "returning";
+        return;
+    }
+    for(int i = 0; i < commentTracerList.count(); i++)
+    {
+        qDebug() << "name is: " << commentTracerList[i].name;
+        if(commentTracerList[i].name != name) continue;
+        qDebug() << "adding" << commentTracerList[i].index;
+        this->addCommentTracer(selectedGraph, commentTracerList[i].position);
+        ui->plotView->replot();
+    }
+}
 
+void MainWindow::on_hideCommentTracer_toggled(bool checked)
+{
+    if(checked)
+    {
+        qDebug() << "hello";
+        this->hideCommentTracers(ui->plotView->selectedGraphs().first());
+    }
+    else
+    {
+
+        qDebug() << "bye";
+        this->showCommentTracers(ui->plotView->selectedGraphs().first());
+    }
+}
+
+void MainWindow::toggleTracersCheckBox()
+{
+    if(ui->plotView->selectedGraphs().first()->name() == "O2" && o2TracersShown) tracerCheckBox->setChecked(true);
+    else tracerCheckBox->setChecked(false);
+    if(ui->plotView->selectedGraphs().first()->name() == "RE" && reTracersShown) tracerCheckBox->setChecked(true);
+    else tracerCheckBox->setChecked(false);
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)

@@ -7,12 +7,17 @@
 #include <CustomLineEdit.h>
 #include <QTableWidget>
 #include <QtWebKit/QWebView>
+#include <QCheckBox>
 #include "QCustomPlot.h"
 #include "SettingsPage.h"
 #include "CommentWindow.h"
+#include "CommentTracer.h"
 
 
 typedef QList <double> DoublesList;
+typedef QList <CommentTracer> CommentTracerList;
+typedef QList <QCPItemTracer * > ItemTracerList;
+
 namespace Ui {
 class MainWindow;
 }
@@ -38,6 +43,10 @@ public:
     double dataPointMap(double );
     void publishComments(QString ,double );
     int findCommentTracer(double );
+    void toggleTracersCheckBox();
+
+    bool saveCommentTracerDB(CommentTracer * );
+    void loadCommentTracerDB();
 
 private:
     Ui::MainWindow *ui;
@@ -92,6 +101,7 @@ private:
     QAction* actionMinRHRemove;
     QAction* actionMaxRHRemove;
     bool RE, ERE, O2, MinTemp, MaxTemp, MinRH, MaxRH;
+    bool o2TracersShown, reTracersShown;
 
     QAction * actionAddComment;
     QAction * actionRemoveComment;
@@ -100,9 +110,17 @@ private:
     QString summaryFileName;
     QString filePath;
 
+    QCheckBox * tracerCheckBox;
+
     // pointer to comment window
     CommentWindow * commentWindow;
 
+    ItemTracerList reItemTracerPtrList;
+    ItemTracerList O2ItemTracerPtrList;
+
+
+    CommentTracerList commentTracerList;
+    int nextTracerIndex;
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -134,8 +152,10 @@ public slots:
     QString generateHTML();
     void saveHTMLToPDF(QWebView * );
 
-    void hideComments();
-    void showComments();
+    void hideCommentTracers(QCPGraph *);
+    void showCommentTracers(QCPGraph *);
+
+    void on_hideCommentTracer_toggled(bool );
 
     // slots to limit x/y-axis
     void xAxisLimit(QCPRange newRange);

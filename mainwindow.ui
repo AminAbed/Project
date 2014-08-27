@@ -332,12 +332,13 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>false</bool>
+    <bool>true</bool>
    </attribute>
    <addaction name="actionOpen"/>
    <addaction name="actionOpenAnotherWindow"/>
    <addaction name="actionSettings"/>
    <addaction name="actionPDF"/>
+   <addaction name="actionRescale"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
@@ -389,6 +390,18 @@
    </property>
    <property name="toolTip">
     <string>Print to PDF</string>
+   </property>
+  </action>
+  <action name="actionRescale">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/images/reset.jpg</normaloff>:/images/reset.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>Rescale</string>
+   </property>
+   <property name="toolTip">
+    <string>Rescale</string>
    </property>
   </action>
  </widget>
