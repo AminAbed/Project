@@ -135,6 +135,7 @@ public slots:
     void on_actionOpenAnotherWindow_triggered();
     void on_actionPlotPDF_triggered();
     void on_actionTablePDF_triggered();
+    void on_actionRescale_triggered();
     void on_openButton_clicked();
     void updatePatientInfoBox();
     int readSession(QString );

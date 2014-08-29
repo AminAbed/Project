@@ -481,8 +481,10 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
     ui->plotView->graph()->setPen(QPen(color));
     ui->plotView->graph()->setName(name);
 
-    ui->plotView->yAxis->setRange(value.first(),value.last());
-    ui->plotView->yAxis->rescale(true);
+//    ui->plotView->yAxis->setRange(value.first(),value.last());
+//    ui->plotView->yAxis->rescale(true);
+    //ui->plotView->graph()->rescaleValueAxis();
+//    ui->plotView->rescaleAxes();
 
     // plotting continuous segments
 //    QVector<double> xDivided;
@@ -505,6 +507,7 @@ void MainWindow::plot(int parameter, Qt::GlobalColor color, QString name)
 //        ui->plotView->graph()->setData(xPlot, yPlot);
 
         ui->plotView->graph()->setData(x,value);
+        ui->plotView->rescaleAxes();
         ui->plotView->replot();
 
 //        xDivided.clear();
@@ -517,15 +520,32 @@ void MainWindow::removeSelectedGraph()
 {
   if (ui->plotView->selectedGraphs().size() > 0)
   {
-    ui->plotView->removeGraph(ui->plotView->selectedGraphs().first());
-    ui->plotView->replot();
+      // needs better structuring... maybe putting all graphs in a struct
+      QString name = ui->plotView->selectedGraphs().first()->name();
+      if (name == "O2") O2 = false;
+      if (name == "RE") RE = false;
+      if (name == "ERE") ERE = false;
+      if (name == "Min Temp") MinTemp = false;
+      if (name == "Max Temp") MaxTemp = false;
+      if (name == "Min RH") MinRH = false;
+      if (name == "Max RH") MaxRH = false;
+
+      this->hideCommentTracers(ui->plotView->selectedGraphs().first());
+      ui->plotView->removeGraph(ui->plotView->selectedGraphs().first());
+      ui->plotView->rescaleAxes();
+      ui->plotView->replot();
+
   }
 }
 
 void MainWindow::removeAllGraphs()
 {
+    tracerCheckBox->setEnabled(false);
     RE = ERE = O2 = MinTemp = MaxTemp = MinRH = MaxRH = false;
     ui->plotView->clearGraphs();
+    ui->plotView->clearItems();
+    O2ItemTracerPtrList.clear();
+    reItemTracerPtrList.clear();
     ui->plotView->replot();
 }
 
@@ -539,6 +559,7 @@ bool MainWindow::removeGraphByName(QString name)
       {
         foundIndex = i;
         ui->plotView->removeGraph(foundIndex);
+        ui->plotView->rescaleAxes();
         ui->plotView->replot();
         success = true;
         break;
@@ -632,6 +653,8 @@ bool MainWindow::removeGraphByAction(QAction * action)
       {
         foundIndex = i;
         ui->plotView->removeGraph(foundIndex);
+        ui->plotView->rescaleAxes();
+        ui->plotView->replot();
         success = true;
         break;
       }
@@ -1013,7 +1036,7 @@ void MainWindow::yAxisLimit(QCPRange newRange)
 {
     QCPRange boundedRange = newRange;
     double lowerRangeBound = 0;
-    double upperRangeBound = 50;
+    double upperRangeBound = 70;
     if (boundedRange.size() > upperRangeBound-lowerRangeBound)
     {
         boundedRange = QCPRange(lowerRangeBound, upperRangeBound);
@@ -1329,6 +1352,7 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
     if(selectedGraph->name()== "O2") O2ItemTracerPtrList.append(commentTracer);
     else reItemTracerPtrList.append(commentTracer);
 
+    qDebug() << "graphs key is" <<commentTracer->graphKey() << "position is "<< position;
     tracerList[position] = selectedGraph->name();
 //    QMap<double, int>::const_iterator i = tracerList.constBegin();
 //    while (i != tracerList.constEnd()) {
@@ -1340,7 +1364,28 @@ void MainWindow::addCommentTracer(QCPGraph * selectedGraph, double position)
 
 void MainWindow::removeCommentTracer(QPoint mouePosition)
 {
+    if(ui->plotView->selectedGraphs().first()->name()== "O2")
+    {
+        for(int i = 0; i < O2ItemTracerPtrList.count(); i++)
+            if(O2ItemTracerPtrList[i] == ui->plotView->itemAt(mouePosition))
+            {
+                O2ItemTracerPtrList.removeAt(i);
+                qDebug() << "O2ItemTracerPtrList.count()" << O2ItemTracerPtrList.count();
+                break;
+            }
+    }
+    else
+    {
+        for(int i = 0; i < reItemTracerPtrList.count(); i++)
+            if(reItemTracerPtrList[i] == ui->plotView->itemAt(mouePosition))
+            {
+                reItemTracerPtrList.removeAt(i);
+                qDebug() << "reItemTracerPtrList.count()" << reItemTracerPtrList.count();
+                break;
+            }
+    }
     ui->plotView->removeItem(ui->plotView->itemAt(mouePosition));
+
 //    for(int i = 0; i < commentTracerList.count(); i++)
 //    {
 //        if ( commentTracerList.at(i) == ui->plotView->itemAt(mouePosition) )
@@ -1372,7 +1417,7 @@ void MainWindow::removeComment(double position)
             QSettings commentTracerDB("../commentTracerDB.ini", QSettings::IniFormat);
             commentTracerDB.beginWriteArray("commentTracers");
             commentTracerDB.setArrayIndex(i);
-                               commentTracerDB.remove("");
+            commentTracerDB.remove("");
             commentTracerDB.endArray();
 
         }
@@ -1556,10 +1601,15 @@ void MainWindow::hideCommentTracers(QCPGraph * selectedGraph)
         itemTracerPtrList = O2ItemTracerPtrList;
 //        o2TracersShown = false;
     }
-    else
+    else if (name == "RE")
     {
         itemTracerPtrList = reItemTracerPtrList;
  //       reTracersShown = false;
+    }
+    else
+    {
+        qDebug() << "not my business";
+                    return;
     }
     if (itemTracerPtrList.isEmpty()) return;
     for(int i = 0; i < itemTracerPtrList.count(); i++)
@@ -1634,6 +1684,13 @@ void MainWindow::toggleTracersCheckBox()
     else tracerCheckBox->setChecked(false);
     if(ui->plotView->selectedGraphs().first()->name() == "RE" && reTracersShown) tracerCheckBox->setChecked(true);
     else tracerCheckBox->setChecked(false);
+}
+
+// rescale plots
+void MainWindow::on_actionRescale_triggered()
+{
+    ui->plotView->rescaleAxes();
+    ui->plotView->replot();
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent * event)
