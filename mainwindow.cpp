@@ -304,8 +304,8 @@ int MainWindow::readSession(QString filePath)
     this->loadCommentTracerDB();
     qDebug() << "commentTracerList.count()" << commentTracerList.count();
 
-
-
+    ui->horizontalScrollBar->setVisible(false);
+    ui->verticalScrollBar->setVisible(false);
 
     ui->actionOpen->setEnabled(true);
     ui->actionOpen->setVisible(false);
@@ -520,7 +520,7 @@ void MainWindow::removeSelectedGraph()
 {
   if (ui->plotView->selectedGraphs().size() > 0)
   {
-      // needs better structuring... maybe putting all graphs in a struct
+      // needs better structuring... maybe putting a graph and its properties in a struct
       QString name = ui->plotView->selectedGraphs().first()->name();
       if (name == "O2") O2 = false;
       if (name == "RE") RE = false;
@@ -1606,29 +1606,17 @@ void MainWindow::hideCommentTracers(QCPGraph * selectedGraph)
         itemTracerPtrList = reItemTracerPtrList;
  //       reTracersShown = false;
     }
-    else
-    {
-        qDebug() << "not my business";
-                    return;
-    }
+    else return;
+
     if (itemTracerPtrList.isEmpty()) return;
     for(int i = 0; i < itemTracerPtrList.count(); i++)
     {
-//        qDebug() << commentTracerList[i].name;
-//        if(commentTracerList[i].name != name) continue;
-//        qDebug() << "removing..." << commentTracerList[i].index;
-//        ui->plotView->removeItem(0);
+
 
         qDebug() << "itemTracerPtrList[i]->graph()->name()" << itemTracerPtrList[i]->graph()->name();
         qDebug() << "itemTracerPtr count " << itemTracerPtrList.count();
-          //      if(itemTracerPtrList[i]->graph()->name() != name) continue;
-                ui->plotView->removeItem(itemTracerPtrList[i]);
- //               itemsToBeRemoved.append(i);
-               // delete itemTracerPtrList[i];
-                //itemTracerPtrList.removeAt(i);
-
-                qDebug() << "itemTracerPtrList.count() within the loop" << itemTracerPtrList.count();
-
+        ui->plotView->removeItem(itemTracerPtrList[i]);
+        qDebug() << "itemTracerPtrList.count() within the loop" << itemTracerPtrList.count();
     }
     qDebug() << "itemTracerPtrList.count()" << itemTracerPtrList.count();
     ui->plotView->replot();
@@ -1636,10 +1624,6 @@ void MainWindow::hideCommentTracers(QCPGraph * selectedGraph)
     if (name == "O2") O2ItemTracerPtrList = itemTracerPtrList;
     else reItemTracerPtrList =  itemTracerPtrList;
 
-//    for(int i = 0; i < itemsToBeRemoved.count(); i++)
-//    {
-//        itemTracerPtrList.removeAt(i);
-//    }
     qDebug() << "itemTracerPtrList.count() end of the loop" << itemTracerPtrList.count();
 
 }
